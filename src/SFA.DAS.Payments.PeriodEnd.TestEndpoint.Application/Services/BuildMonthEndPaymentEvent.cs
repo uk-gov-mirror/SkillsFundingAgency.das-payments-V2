@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SFA.DAS.Payments.FundingSource.Messages.Internal.Commands;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories;
 using SFA.DAS.Payments.ProviderPayments.Messages.Internal.Commands;
@@ -9,7 +11,7 @@ using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 
 namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
 {
-    public class BuildMonthEndPaymentEvent :IBuildMonthEndPaymentEvent
+    public class BuildMonthEndPaymentEvent : IBuildMonthEndPaymentEvent
     {
         private readonly ITestEndPointRepository testEndPointRepository;
         private readonly IApprenticeshipKeyService apprenticeshipKeyService;
@@ -48,9 +50,10 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             };
         }
 
-        public ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period)
+        public ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear,
+            byte period)
         {
-            return  new ProcessProviderMonthEndCommand
+            return new ProcessProviderMonthEndCommand
             {
                 Ukprn = ukprn,
                 JobId = GenerateId(),
@@ -63,6 +66,35 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
                 RequestTime = DateTimeOffset.UtcNow
             };
         }
+
+        public async Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand( short academicYear, byte period)
+        {
+            var accountIds = await testEndPointRepository
+                .GetAccountIds()
+                .ConfigureAwait(false);
+
+            var commands = new List<ProcessLevyPaymentsOnMonthEndCommand>();
+
+            foreach (var accountId in accountIds)
+            {
+                commands.Add(new ProcessLevyPaymentsOnMonthEndCommand
+                {
+                    CommandId = Guid.NewGuid(),
+                    JobId = GenerateId(),
+                    CollectionPeriod = new CollectionPeriod
+                    {
+                        AcademicYear = academicYear,
+                        Period = period,
+                    },
+                    RequestTime = DateTime.UtcNow,
+                    SubmissionDate = DateTime.UtcNow,
+                    AccountId = accountId
+                });
+            }
+
+            return commands;
+        }
+
         private long GenerateId(int maxValue = 1000000000)
         {
             var id = random.Next(maxValue);

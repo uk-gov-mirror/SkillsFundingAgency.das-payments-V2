@@ -46,6 +46,17 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
             options.SetDestination(testEndpointConfiguration.ProviderPaymentsEndpointName);
             await endpointInstance.Send(processProviderMonthEndCommand, options).ConfigureAwait(false);
 
+            var levyMonthEndCommands = await buildMonthEndPaymentEvent
+                .CreateProcessLevyPaymentsOnMonthEndCommand(requestModel.AcademicYear, requestModel.Period);
+
+            //var levyMonthEndCommandSendOptions = new SendOptions();
+            //options.SetDestination(testEndpointConfiguration.FundingSourceEndpointName);
+
+            foreach (var levyMonthEndCommand in levyMonthEndCommands)
+            {
+                await endpointInstance.Publish(levyMonthEndCommand).ConfigureAwait(false);
+            }
+            
             ViewBag.Message = "Month end event successfully sent";
 
             return View("Index");

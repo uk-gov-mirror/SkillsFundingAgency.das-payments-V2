@@ -30,5 +30,31 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
 
             return aims;
         }
+
+        public async Task<List<long>> GetAccountIds( CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var accountIds = await paymentsDataContext
+                .Apprenticeship
+                .Select(x => x.AccountId)
+                .Distinct()
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return accountIds;
+        }
+
+        public async Task<List<long>> GetTransferAccountIds(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var accountIds = await paymentsDataContext
+                .Apprenticeship
+                .Where(x => x.TransferSendingEmployerAccountId.HasValue)
+                .Select(x => x.TransferSendingEmployerAccountId.GetValueOrDefault())
+                .Distinct()
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return accountIds;
+        }
+
     }
 }
