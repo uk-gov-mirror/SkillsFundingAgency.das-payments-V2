@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using DCT.TestDataGenerator;
 using TestGeneratorHelpers = DCT.TestDataGenerator.Helpers;
 using ESFA.DC.ILR.Model.Loose;
