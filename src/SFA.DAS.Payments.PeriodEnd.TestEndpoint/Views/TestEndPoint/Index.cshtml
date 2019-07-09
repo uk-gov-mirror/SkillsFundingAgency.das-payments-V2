@@ -7,14 +7,53 @@
 
 <div class="card card-outline-secondary">
     <div class="card-header">
-        <h3 class="mb-0">Period End Form</h3>
+        <h3 class="mb-0">Start Period End</h3>
     </div>
     <div class="card-body">
 
-        @if (!string.IsNullOrWhiteSpace(ViewBag?.Message))
+        @if (!string.IsNullOrWhiteSpace(ViewBag?.StartNewCollectionPeriod))
         {
             <div class="alert alert-success" role="alert">
-                @ViewBag.Message
+                @ViewBag.StartNewCollectionPeriod
+            </div>
+        }
+
+        <form class="form" role="form" autocomplete="off" asp-action="StartNewCollectionPeriod" asp-controller="TestEndPoint">
+            <div class="form-group">
+                <label asp-for="Ukprn">Ukprn</label>
+                <input type="number" asp-for="Ukprn" class="form-control" required>
+                <div class="invalid-feedback">Please enter ukprn</div>
+            </div>
+            <div class="form-group">
+                <label asp-for="AcademicYear">Academic Year</label>
+                <input type="number" asp-for="AcademicYear" class="form-control" required>
+                <div class="invalid-feedback">Please enter a academic year</div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Period">Period </label>
+                <input type="number" asp-for="Period" class="form-control" required>
+                <div class="invalid-feedback">Please enter a Period</div>
+            </div>
+            
+            <input type="submit" class="btn btn-success btn-lg float-right" id="btnSend" value="Start New Collection Period">
+        </form>
+    </div>
+
+</div>
+
+<br/>
+<br/>
+
+<div class="card card-outline-secondary">
+    <div class="card-header">
+        <h3 class="mb-0">Period End </h3>
+    </div>
+    <div class="card-body">
+
+        @if (!string.IsNullOrWhiteSpace(ViewBag?.SendPeriodEnd))
+        {
+            <div class="alert alert-success" role="alert">
+                @ViewBag.SendPeriodEnd
             </div>
         }
 
@@ -35,7 +74,7 @@
                 <div class="invalid-feedback">Please enter a Period</div>
             </div>
 
-            <input type="submit" class="btn btn-success btn-lg float-right" id="btnSend">
+            <input type="submit" class="btn btn-success btn-lg float-right" id="btnSend" value="Start Month End">
         </form>
     </div>
 

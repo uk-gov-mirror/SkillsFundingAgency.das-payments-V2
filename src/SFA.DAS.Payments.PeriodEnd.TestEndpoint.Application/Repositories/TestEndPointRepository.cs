@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Remotion.Linq.Clauses;
 
 namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
 {
@@ -33,14 +34,20 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
 
         public async Task<List<long>> GetAccountIds( CancellationToken cancellationToken = default(CancellationToken))
         {
-            var accountIds = await paymentsDataContext
+            var accountIdTuples = await paymentsDataContext
                 .Apprenticeship
-                .Select(x => x.AccountId)
-                .Distinct()
+                .Select(x => new {x.AccountId, x.TransferSendingEmployerAccountId})
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
 
-            return accountIds;
+            var accountIds = accountIdTuples.Select(x => x.AccountId).ToList();
+            var transferAccountIds = accountIdTuples
+                                    .Where(o => o.TransferSendingEmployerAccountId.HasValue)
+                                    .Select(o => o.TransferSendingEmployerAccountId.Value)
+                                    .ToList();
+            accountIds.AddRange(transferAccountIds);
+
+            return accountIds.Distinct().ToList();
         }
 
         public async Task<List<long>> GetTransferAccountIds(CancellationToken cancellationToken = default(CancellationToken))

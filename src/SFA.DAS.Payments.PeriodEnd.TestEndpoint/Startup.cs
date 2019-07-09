@@ -14,10 +14,12 @@ using NServiceBus;
 using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Application.Repositories;
 using SFA.DAS.Payments.Core.Configuration;
+using SFA.DAS.Payments.FundingSource.Messages.Internal.Commands;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Infrastructure;
+using SFA.DAS.Payments.ProviderPayments.Messages.Internal.Commands;
 using SFA.DAS.Payments.RequiredPayments.Domain;
 using SFA.DAS.Payments.RequiredPayments.Domain.Services;
 
@@ -98,11 +100,31 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint
                 .Transactions(TransportTransactionMode.ReceiveOnly)
                 .RuleNameShortener(ruleName => ruleName.Split('.').LastOrDefault() ?? ruleName);
 
+            var routing = transport.Routing();
+            routing.RouteToEndpoint(typeof(ProcessLevyPaymentsOnMonthEndCommand), config.FundingSourceEndpointName);
+            routing.RouteToEndpoint(typeof(ProcessProviderMonthEndCommand), config.ProviderPaymentsEndpointName);
+          
             EndpointConfigurationEvents.OnConfiguringTransport(transport);
             endpointConfiguration.UseSerialization<NewtonsoftSerializer>();
             endpointConfiguration.EnableInstallers();
             endpointConfiguration.EnableCallbacks(makesRequests: false);
             return endpointConfiguration;
+
+
+
+
+
+            //var transportConfig = Container.Resolve<TransportExtensions<AzureServiceBusTransport>>();
+            //var routing = transportConfig.Routing();
+            //routing.RouteToEndpoint(typeof(ProcessLearnerCommand), EndpointNames.EarningEvents);
+            //routing.RouteToEndpoint(typeof(ProcessProviderMonthEndCommand), EndpointNames.ProviderPayments);
+            //routing.RouteToEndpoint(typeof(CollectionStartedEvent), EndpointNames.RequiredPayments);
+            //routing.RouteToEndpoint(typeof(RecordStartedProcessingMonthEndJob).Assembly, EndpointNames.JobMonitoring);
+            //routing.RouteToEndpoint(typeof(ProcessLevyPaymentsOnMonthEndCommand).Assembly, EndpointNames.FundingSource);
+            //routing.RouteToEndpoint(typeof(EmployerChangedProviderPriority).Assembly, EndpointNames.FundingSource);
+            //transportConfig.Queues().LockDuration(TimeSpan.FromMinutes(5));
+            //endpointConfiguration.MakeInstanceUniquelyAddressable("reply");
+            //endpointConfiguration.EnableCallbacks();
         }
 
     }

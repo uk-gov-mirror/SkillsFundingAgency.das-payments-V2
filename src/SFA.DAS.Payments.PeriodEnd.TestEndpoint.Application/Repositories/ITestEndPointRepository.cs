@@ -7,8 +7,8 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
 {
     public interface ITestEndPointRepository
     {
-        Task<List<SubmittedLearnerAimModel>> GetProviderLearnerAims( long ukprn, CancellationToken cancellationToken = default(CancellationToken));
+        Task<List<SubmittedLearnerAimModel>> GetProviderLearnerAims(long ukprn,
+            CancellationToken cancellationToken = default(CancellationToken));
         Task<List<long>> GetAccountIds(CancellationToken cancellationToken = default(CancellationToken));
-        Task<List<long>> GetTransferAccountIds(CancellationToken cancellationToken = default(CancellationToken));
     }
 }

@@ -23,6 +23,8 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
             this.endpointInstanceFactory = endpointInstanceFactory;
             this.buildMonthEndPaymentEvent = buildMonthEndPaymentEvent;
             this.testEndpointConfiguration = testEndpointConfiguration;
+
+             
         }
 
         public IActionResult Index()
@@ -31,33 +33,35 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
         }
 
         [HttpPost()]
+        public async Task<IActionResult> StartNewCollectionPeriod(SendPeriodEndRequest requestModel)
+        {
+            var collectionStartMessage = await buildMonthEndPaymentEvent.CreateCollectionStartedEvent(requestModel.Ukprn, requestModel.AcademicYear);
+            var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
+            await endpointInstance.Publish(collectionStartMessage).ConfigureAwait(false);
+            
+            ViewBag.StartNewCollectionPeriod = "collection Start Message successfully sent";
+
+            return View("Index");
+        }
+
+        [HttpPost()]
         public async Task<IActionResult> SendPeriodEnd(SendPeriodEndRequest requestModel)
         {
             var processProviderMonthEndCommand = buildMonthEndPaymentEvent
                 .CreateProcessProviderMonthEndCommand(requestModel.Ukprn, requestModel.AcademicYear, requestModel.Period);
 
-            var collectionStartMessage = await buildMonthEndPaymentEvent
-                    .CreateCollectionStartedEvent(requestModel.Ukprn, requestModel.AcademicYear);
-            
-            var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
-           await endpointInstance.Publish(collectionStartMessage).ConfigureAwait(false);
-
-            var options = new SendOptions();
-            options.SetDestination(testEndpointConfiguration.ProviderPaymentsEndpointName);
-            await endpointInstance.Send(processProviderMonthEndCommand, options).ConfigureAwait(false);
-
             var levyMonthEndCommands = await buildMonthEndPaymentEvent
                 .CreateProcessLevyPaymentsOnMonthEndCommand(requestModel.AcademicYear, requestModel.Period);
 
-            //var levyMonthEndCommandSendOptions = new SendOptions();
-            //options.SetDestination(testEndpointConfiguration.FundingSourceEndpointName);
+            var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
 
+            await endpointInstance.Send(processProviderMonthEndCommand).ConfigureAwait(false);
             foreach (var levyMonthEndCommand in levyMonthEndCommands)
             {
-                await endpointInstance.Publish(levyMonthEndCommand).ConfigureAwait(false);
+                await endpointInstance.Send(levyMonthEndCommand).ConfigureAwait(false);
             }
-            
-            ViewBag.Message = "Month end event successfully sent";
+
+            ViewBag.SendPeriodEnd = "Month End Event successfully sent";
 
             return View("Index");
         }
