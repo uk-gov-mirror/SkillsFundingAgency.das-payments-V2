@@ -1,4 +1,4 @@
-@ignore
+#@supports_dc_e2e
 Feature: 5% Contribution from April 2019 PV2-895
 As a provider,
 I want a Non Levy learner, starting prior to Apr 2019, taking a planned break and resuming from Apr 2019, where completion payment remains at 10% contribution
@@ -7,7 +7,7 @@ So that I am paid the correct apprenticeship funding by SFA
 Scenario Outline: Non Levy Learner, started learning before Apr19, has planned break and resumes learning from Apr19, remains on 10% contribution PV2 -895
     Given the provider previously submitted the following learner details
         | Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                                     | SFA Contribution Percentage |
-        | 01/Nov/Current Academic Year | 12 months        | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 4 months        | planned break     | Act2          | 1                   | ZPROG001      | 17            | 25             | 16-18 Apprenticeship (From May 2017) Non-Levy Contract (non-procured) | 90%                         |
+        | 01/Nov/Current Academic Year | 12 months        | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 4 months        | planned break     | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship (From May 2017) Non-Levy Contract (non-procured) | 90%                         |
 
     And the following earnings had been generated for the learner
         | Delivery Period           | On-Programme | Completion | Balancing |
@@ -32,11 +32,11 @@ Scenario Outline: Non Levy Learner, started learning before Apr19, has planned b
 
     But the Provider now changes the Learner details as follows
 		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                                     | SFA Contribution Percentage |
-		| 03/Apr/Current Academic Year | 10 months        | 15000                | 03/Apr/Current Academic Year        | 3000                   | 03/Apr/Current Academic Year          |                 | continuing        | Act2          | 1                   | ZPROG001      | 17            | 25             | 16-18 Apprenticeship (From May 2017) Non-Levy Contract (non-procured) | 90%                         |
+		| 06/Apr/Current Academic Year | 10 months        | 15000                | 06/Apr/Current Academic Year        | 3000                   | 06/Apr/Current Academic Year          |                 | continuing        | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship (From May 2017) Non-Levy Contract (non-procured) | 90%                         |
 	And price details as follows
-        | Price details     | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | SFA Contribution Percentage |
-        | 1st price details | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 90%                         |
-        | 2nd price details | 12000                | 03/Apr/Current Academic Year        | 3000                   | 03/Apr/Current Academic Year          | 90%                         |
+        | Price details     | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | SFA Contribution Percentage | Contract Type |
+        | 1st price details | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 90%                         | Act2          |
+        | 2nd price details | 12000                | 03/Apr/Current Academic Year        | 3000                   | 03/Apr/Current Academic Year          | 90%                         | Act2          |
 	When the amended ILR file is re-submitted for the learners in collection period <Collection_Period>
 	Then the following learner earnings should be generated
         | Delivery Period           | On-Programme | Completion | Balancing |
