@@ -6,8 +6,8 @@ So that I am paid the correct apprenticeship funding by SFA
 
 Scenario Outline: Non Levy Learner, started learning before Apr19, has planned break and resumes learning from Apr19, remains on 10% contribution PV2 -895
     Given the provider previously submitted the following learner details
-        | Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                                     | SFA Contribution Percentage |
-        | 01/Nov/Current Academic Year | 12 months        | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 4 months        | planned break     | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship (From May 2017) Non-Levy Contract (non-procured) | 90%                         |
+        | Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                               | SFA Contribution Percentage |
+        | 01/Nov/Current Academic Year | 12 months        | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 4 months        | planned break     | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship Non-Levy Contract (procured) | 90%                         |  
 
     And the following earnings had been generated for the learner
         | Delivery Period           | On-Programme | Completion | Balancing |
@@ -31,8 +31,8 @@ Scenario Outline: Non Levy Learner, started learning before Apr19, has planned b
 		| R07/Current Academic Year | Feb/Current Academic Year | 900                    | 100                         | Learning         |
 
     But the Provider now changes the Learner details as follows
-		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                                     | SFA Contribution Percentage |
-		| 06/Apr/Current Academic Year | 10 months        | 15000                | 06/Apr/Current Academic Year        | 3000                   | 06/Apr/Current Academic Year          |                 | continuing        | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship (From May 2017) Non-Levy Contract (non-procured) | 90%                         |
+		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                               | SFA Contribution Percentage |
+		| 06/Apr/Current Academic Year | 10 months        | 15000                | 06/Apr/Current Academic Year        | 3000                   | 06/Apr/Current Academic Year          |                 | continuing        | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship Non-Levy Contract (procured) | 90%                         |  
 	And price details as follows
         | Price details     | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | SFA Contribution Percentage | Contract Type |
         | 1st price details | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 90%                         | Act2          |
