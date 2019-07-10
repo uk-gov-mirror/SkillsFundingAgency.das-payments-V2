@@ -1,4 +1,4 @@
-#@supports_dc_e2e
+@supports_dc_e2e
 Feature: 5% Contribution from April 2019 PV2-895
 As a provider,
 I want a Non Levy learner, starting prior to Apr 2019, taking a planned break and resuming from Apr 2019, where completion payment remains at 10% contribution
@@ -32,7 +32,7 @@ Scenario Outline: Non Levy Learner, started learning before Apr19, has planned b
 
     But the Provider now changes the Learner details as follows
 		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                               | SFA Contribution Percentage |
-		| 06/Apr/Current Academic Year | 10 months        | 15000                | 06/Apr/Current Academic Year        | 3000                   | 06/Apr/Current Academic Year          |                 | continuing        | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship Non-Levy Contract (procured) | 90%                         |  
+		| 06/Apr/Current Academic Year | 10 months        | 12000                | 06/Apr/Current Academic Year        | 3000                   | 06/Apr/Current Academic Year          |                 | continuing        | Act2          | 1                   | ZPROG001      | 17            | 25             | 19+ Apprenticeship Non-Levy Contract (procured) | 90%                         |  
 	And price details as follows
         | Price details     | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | SFA Contribution Percentage | Contract Type |
         | 1st price details | 12000                | 01/Nov/Current Academic Year        | 3000                   | 01/Nov/Current Academic Year          | 90%                         | Act2          |
