@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SFA.DAS.Payments.DataLocks.Messages.Internal;
 using SFA.DAS.Payments.FundingSource.Messages.Internal.Commands;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories;
@@ -94,6 +95,26 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
 
             return commands;
         }
+
+        public async Task<List<ResetCacheCommand>> CreateDataLockResetCommand()
+        {
+            var ukprns = await testEndPointRepository
+                .GetUkprns()
+                .ConfigureAwait(false);
+
+            var commands = new List<ResetCacheCommand>();
+
+            foreach (var ukprn in ukprns)
+            {
+                commands.Add(new ResetCacheCommand
+                {
+                    Ukprn = ukprn
+                });
+            }
+
+            return commands;
+        }
+
 
         private long GenerateId(int maxValue = 1000000000)
         {

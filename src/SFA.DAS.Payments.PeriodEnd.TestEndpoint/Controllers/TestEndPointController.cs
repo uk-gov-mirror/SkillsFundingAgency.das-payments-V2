@@ -23,25 +23,11 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
             this.endpointInstanceFactory = endpointInstanceFactory;
             this.buildMonthEndPaymentEvent = buildMonthEndPaymentEvent;
             this.testEndpointConfiguration = testEndpointConfiguration;
-
-             
         }
 
         public IActionResult Index()
         {
             return View();
-        }
-
-        [HttpPost()]
-        public async Task<IActionResult> StartNewCollectionPeriod(SendPeriodEndRequest requestModel)
-        {
-            var collectionStartMessage = await buildMonthEndPaymentEvent.CreateCollectionStartedEvent(requestModel.Ukprn, requestModel.AcademicYear);
-            var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
-            await endpointInstance.Publish(collectionStartMessage).ConfigureAwait(false);
-            
-            ViewBag.StartNewCollectionPeriod = "collection Start Message successfully sent";
-
-            return View("Index");
         }
 
         [HttpPost()]
@@ -65,5 +51,26 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
 
             return View("Index");
         }
+
+        [HttpPost()]
+        public async Task<IActionResult> StartNewCollectionPeriod(SendPeriodEndRequest requestModel)
+        {
+            var collectionStartMessage = await buildMonthEndPaymentEvent.CreateCollectionStartedEvent(requestModel.Ukprn, requestModel.AcademicYear);
+            var resetDataLockMessages = await buildMonthEndPaymentEvent.CreateDataLockResetCommand();
+           var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
+            
+           await endpointInstance.Publish(collectionStartMessage).ConfigureAwait(false);
+
+            foreach (var resetDataLockMessage in resetDataLockMessages)
+            {
+                await endpointInstance.Send(resetDataLockMessage).ConfigureAwait(false);
+            }
+
+            ViewBag.StartNewCollectionPeriod = "collection Start Message successfully sent";
+
+            return View("Index");
+        }
+
+
     }
 }

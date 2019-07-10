@@ -13,6 +13,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Infrastructure
         string PaymentsConnectionString { get; }
         string ProviderPaymentsEndpointName { get;}
         string FundingSourceEndpointName { get;}
+        string DataLockEndpointName { get; }
     }
 
     public class TestEndpointConfiguration: ITestEndpointConfiguration
@@ -23,5 +24,6 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Infrastructure
         public string PaymentsConnectionString { get; set; }
         public string ProviderPaymentsEndpointName { get; set; }
         public string FundingSourceEndpointName { get; set; }
+        public string DataLockEndpointName { get; set; }
     }
 }

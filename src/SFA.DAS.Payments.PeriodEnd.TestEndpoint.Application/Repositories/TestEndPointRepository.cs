@@ -50,6 +50,18 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
             return accountIds.Distinct().ToList();
         }
 
+        public async Task<List<long>> GetUkprns(CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var ukprns = await paymentsDataContext
+                .Apprenticeship
+                .Select(x => x.Ukprn)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+           
+            return ukprns.Distinct().ToList();
+        }
+
         public async Task<List<long>> GetTransferAccountIds(CancellationToken cancellationToken = default(CancellationToken))
         {
             var accountIds = await paymentsDataContext
