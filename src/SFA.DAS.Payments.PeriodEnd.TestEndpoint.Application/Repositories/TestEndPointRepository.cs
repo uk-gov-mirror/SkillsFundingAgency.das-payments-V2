@@ -32,10 +32,11 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
             return aims;
         }
 
-        public async Task<List<long>> GetAccountIds( CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<List<long>> GetAccountIds( long ukprn,CancellationToken cancellationToken = default(CancellationToken))
         {
             var accountIdTuples = await paymentsDataContext
                 .Apprenticeship
+                .Where(x => x.Ukprn == ukprn)
                 .Select(x => new {x.AccountId, x.TransferSendingEmployerAccountId})
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -61,19 +62,6 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
            
             return ukprns.Distinct().ToList();
         }
-
-        public async Task<List<long>> GetTransferAccountIds(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            var accountIds = await paymentsDataContext
-                .Apprenticeship
-                .Where(x => x.TransferSendingEmployerAccountId.HasValue)
-                .Select(x => x.TransferSendingEmployerAccountId.GetValueOrDefault())
-                .Distinct()
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-
-            return accountIds;
-        }
-
+        
     }
 }

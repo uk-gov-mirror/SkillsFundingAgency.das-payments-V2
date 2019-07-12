@@ -51,8 +51,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             };
         }
 
-        public ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear,
-            byte period)
+        public ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period)
         {
             return new ProcessProviderMonthEndCommand
             {
@@ -68,10 +67,10 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             };
         }
 
-        public async Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand( short academicYear, byte period)
+        public async Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period)
         {
             var accountIds = await testEndPointRepository
-                .GetAccountIds()
+                .GetAccountIds(ukprn)
                 .ConfigureAwait(false);
 
             var commands = new List<ProcessLevyPaymentsOnMonthEndCommand>();

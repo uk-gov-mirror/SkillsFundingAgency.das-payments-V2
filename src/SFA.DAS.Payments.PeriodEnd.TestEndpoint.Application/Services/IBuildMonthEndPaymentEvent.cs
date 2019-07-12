@@ -12,7 +12,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
     {
         Task<CollectionStartedEvent> CreateCollectionStartedEvent(long ukprn, short academicYear);
         ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period);
-        Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(short academicYear, byte period);
+        Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period);
         Task<List<ResetCacheCommand>> CreateDataLockResetCommand();
     }
 }

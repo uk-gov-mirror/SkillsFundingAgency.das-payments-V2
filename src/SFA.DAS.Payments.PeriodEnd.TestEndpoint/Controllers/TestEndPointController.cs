@@ -37,7 +37,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
                 .CreateProcessProviderMonthEndCommand(requestModel.Ukprn, requestModel.AcademicYear, requestModel.Period);
 
             var levyMonthEndCommands = await buildMonthEndPaymentEvent
-                .CreateProcessLevyPaymentsOnMonthEndCommand(requestModel.AcademicYear, requestModel.Period);
+                .CreateProcessLevyPaymentsOnMonthEndCommand(requestModel.Ukprn,requestModel.AcademicYear, requestModel.Period);
 
             var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
 
