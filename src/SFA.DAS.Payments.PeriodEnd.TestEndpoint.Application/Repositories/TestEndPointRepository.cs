@@ -62,6 +62,17 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
            
             return ukprns.Distinct().ToList();
         }
-        
+
+        public async Task<List<SubmittedLearnerAimModel>> CreateMonitoringJob(long ukprn, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            var aims = await paymentsDataContext
+                .J
+                .Where(x => x.Ukprn == ukprn)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return aims;
+        }
+
     }
 }

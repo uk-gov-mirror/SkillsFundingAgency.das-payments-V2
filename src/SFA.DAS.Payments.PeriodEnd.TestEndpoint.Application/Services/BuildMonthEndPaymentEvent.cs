@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -51,12 +51,12 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             };
         }
 
-        public ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period)
+        public ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period,long jobId)
         {
             return new ProcessProviderMonthEndCommand
             {
                 Ukprn = ukprn,
-                JobId = GenerateId(),
+                JobId = jobId,
                 CollectionPeriod = new CollectionPeriod
                 {
                     AcademicYear = academicYear,
@@ -67,7 +67,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             };
         }
 
-        public async Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period)
+        public async Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period, long jobId)
         {
             var accountIds = await testEndPointRepository
                 .GetAccountIds(ukprn)
@@ -80,7 +80,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
                 commands.Add(new ProcessLevyPaymentsOnMonthEndCommand
                 {
                     CommandId = Guid.NewGuid(),
-                    JobId = GenerateId(),
+                    JobId = jobId,
                     CollectionPeriod = new CollectionPeriod
                     {
                         AcademicYear = academicYear,
@@ -114,8 +114,9 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             return commands;
         }
 
+      
 
-        private long GenerateId(int maxValue = 1000000000)
+        public long GenerateId(int maxValue = 1000000000)
         {
             var id = random.Next(maxValue);
             return id;

@@ -20,7 +20,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Client
 
         public MonthEndJobClient(IEndpointInstanceFactory factory, IPaymentLogger logger)
         {
-
             messageSession = factory?.GetEndpointInstance().Result ?? throw new ArgumentNullException();
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }

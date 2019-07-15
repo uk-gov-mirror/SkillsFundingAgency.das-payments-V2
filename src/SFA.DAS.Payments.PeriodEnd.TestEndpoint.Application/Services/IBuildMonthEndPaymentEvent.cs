@@ -11,8 +11,10 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
     public interface IBuildMonthEndPaymentEvent
     {
         Task<CollectionStartedEvent> CreateCollectionStartedEvent(long ukprn, short academicYear);
-        ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period);
-        Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period);
+
+        ProcessProviderMonthEndCommand CreateProcessProviderMonthEndCommand(long ukprn, short academicYear, byte period, long jobId);
+        Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period, long jobId);
         Task<List<ResetCacheCommand>> CreateDataLockResetCommand();
+        long GenerateId(int maxValue = 1000000000);
     }
 }
