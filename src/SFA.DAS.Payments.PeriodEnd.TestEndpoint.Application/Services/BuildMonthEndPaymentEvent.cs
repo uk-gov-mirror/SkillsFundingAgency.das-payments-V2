@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using SFA.DAS.Payments.DataLocks.Messages.Internal;
 using SFA.DAS.Payments.FundingSource.Messages.Internal.Commands;
 using SFA.DAS.Payments.Model.Core;
+using SFA.DAS.Payments.Monitoring.Jobs.Data.Model;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories;
 using SFA.DAS.Payments.ProviderPayments.Messages.Internal.Commands;
 using SFA.DAS.Payments.RequiredPayments.Domain;
@@ -113,8 +114,27 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
 
             return commands;
         }
+        public async Task CreateMonitoringJob(long ukprn, short academicYear, byte period, long jobId)
+        {
 
-      
+            var monthEndJob = new JobModel
+            {
+                Ukprn = ukprn,
+                AcademicYear = academicYear,
+                CollectionPeriod = period,
+                StartTime = DateTime.UtcNow,
+                DcJobId = jobId,
+                IlrSubmissionTime = DateTime.UtcNow,
+                JobType = JobType.MonthEndJob,
+                Status = JobStatus.InProgress,
+                Id = 0,
+                EndTime = default(DateTimeOffset?),
+                LearnerCount = default(int?),
+            };
+
+           await testEndPointRepository.CreateMonitoringJob(monthEndJob);
+        }
+
 
         public long GenerateId(int maxValue = 1000000000)
         {

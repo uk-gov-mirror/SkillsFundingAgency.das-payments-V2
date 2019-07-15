@@ -36,6 +36,8 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
 
             var jobId = buildMonthEndPaymentEvent.GenerateId();
 
+            await buildMonthEndPaymentEvent.CreateMonitoringJob(requestModel.Ukprn, requestModel.AcademicYear, requestModel.Period, jobId);
+            
             var processProviderMonthEndCommand = buildMonthEndPaymentEvent
                 .CreateProcessProviderMonthEndCommand(requestModel.Ukprn, requestModel.AcademicYear, requestModel.Period, jobId);
 
