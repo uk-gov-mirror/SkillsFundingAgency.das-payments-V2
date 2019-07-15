@@ -134,8 +134,6 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
                 Status = JobStatus.InProgress
             };
             
-            var parentMessageId = Guid.NewGuid();
-
             var jobStepModels = new List<JobStepModel>();
 
             foreach (var levyPaymentsOnMonthEndCommand in processLevyPaymentsOnMonthEndCommands)
@@ -143,10 +141,8 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
                 var monthEndStepJob = new JobStepModel
                 {
                     Job =  monthEndJob,
-                    JobId = jobId,
                     MessageId = levyPaymentsOnMonthEndCommand.CommandId,
                     MessageName = levyPaymentsOnMonthEndCommand.GetType().FullName,
-                    ParentMessageId = parentMessageId,
                     Status = JobStepStatus.Queued
                 };
 
@@ -156,10 +152,8 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
             jobStepModels.Add(new JobStepModel
             {
                 Job = monthEndJob,
-                JobId = jobId,
                 MessageId = processProviderMonthEndCommand.CommandId,
                 MessageName = processProviderMonthEndCommand.GetType().FullName,
-                ParentMessageId = parentMessageId,
                 Status = JobStepStatus.Queued
             });
 
