@@ -321,8 +321,10 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
                             otherLearningDelivery.LearningDeliveryFAM.ToList(),
                             otherAim.ActualDurationAsTimespan.HasValue);
                     }
-                }
 
+                    
+                }
+                AddLearningSupportFam(otherLearningDelivery, otherAim);
                 SetCourseCodes(otherAim, otherLearningDelivery);
 
                 SetPriorLearnFundingAdjustment(otherAim, otherLearningDelivery);
@@ -437,6 +439,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
 
         private void AddLearningSupportFam(MessageLearnerLearningDelivery delivery, Aim aim)
         {
+            if (!aim.LearningSupportCode.HasValue) return;
+
             var learningDeliveryFams = delivery.LearningDeliveryFAM.ToList();
             learningDeliveryFams.Add(new MessageLearnerLearningDeliveryLearningDeliveryFAM()
             {
@@ -451,6 +455,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             delivery.LearningDeliveryFAM = learningDeliveryFams.ToArray();
         }
 
+
+
         private void MutateLearningDeliveryFamsForLearner(MessageLearnerLearningDelivery delivery, Aim aim)
         {
             if (aim.HasContractType)
@@ -458,21 +464,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
                 delivery.LearningDeliveryFAM = AddActToLearningDeliveryFam(aim.ContractType, delivery.LearnStartDate, delivery.LearnActEndDate, delivery.LearningDeliveryFAM.ToList(), aim.ActualDurationAsTimespan.HasValue);
             }
 
-            // not all fams are at Price Episode level.
-            if (aim.LearningSupportCode.HasValue)
-            {
-                var listOfLearningDeliveryFams = delivery.LearningDeliveryFAM.ToList();
-                listOfLearningDeliveryFams.Add(new MessageLearnerLearningDeliveryLearningDeliveryFAM()
-                {
-                    LearnDelFAMType = LearnDelFAMType.LSF.ToString(),
-                    LearnDelFAMCode = aim.LearningSupportCode.Value.ToString(),
-                    LearnDelFAMDateFrom = aim.LearningSupportDateFrom.ToDate(),
-                    LearnDelFAMDateFromSpecified = true,
-                    LearnDelFAMDateTo = aim.LearningSupportDateTo.ToDate(),
-                    LearnDelFAMDateToSpecified = true
-                });
-                delivery.LearningDeliveryFAM = listOfLearningDeliveryFams.ToArray();
-            }
+            AddLearningSupportFam(delivery, aim);
 
             foreach (var priceEpisode in aim.PriceEpisodes)
             {
