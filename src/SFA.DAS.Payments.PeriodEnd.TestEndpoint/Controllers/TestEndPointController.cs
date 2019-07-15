@@ -35,15 +35,20 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
         {
 
             var jobId = buildMonthEndPaymentEvent.GenerateId();
-
-            await buildMonthEndPaymentEvent.CreateMonitoringJob(requestModel.Ukprn, requestModel.AcademicYear, requestModel.Period, jobId);
             
             var processProviderMonthEndCommand = buildMonthEndPaymentEvent
                 .CreateProcessProviderMonthEndCommand(requestModel.Ukprn, requestModel.AcademicYear, requestModel.Period, jobId);
 
             var levyMonthEndCommands = await buildMonthEndPaymentEvent
                 .CreateProcessLevyPaymentsOnMonthEndCommand(requestModel.Ukprn,requestModel.AcademicYear, requestModel.Period, jobId);
-
+            
+            await buildMonthEndPaymentEvent.CreateMonitoringJob(requestModel.Ukprn,
+                requestModel.AcademicYear, 
+                requestModel.Period,
+                jobId, 
+                levyMonthEndCommands,
+                processProviderMonthEndCommand);
+         
             var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
 
             await endpointInstance.Send(processProviderMonthEndCommand).ConfigureAwait(false);

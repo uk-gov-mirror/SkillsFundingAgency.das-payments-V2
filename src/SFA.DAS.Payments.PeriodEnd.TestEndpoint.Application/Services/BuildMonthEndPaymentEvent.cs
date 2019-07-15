@@ -114,7 +114,12 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
 
             return commands;
         }
-        public async Task CreateMonitoringJob(long ukprn, short academicYear, byte period, long jobId)
+        public async Task CreateMonitoringJob(long ukprn, 
+            short academicYear,
+            byte period, 
+            long jobId, 
+            List<ProcessLevyPaymentsOnMonthEndCommand> processLevyPaymentsOnMonthEndCommands,
+            ProcessProviderMonthEndCommand processProviderMonthEndCommand)
         {
 
             var monthEndJob = new JobModel
@@ -126,13 +131,40 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
                 DcJobId = jobId,
                 IlrSubmissionTime = DateTime.UtcNow,
                 JobType = JobType.MonthEndJob,
-                Status = JobStatus.InProgress,
-                Id = 0,
-                EndTime = default(DateTimeOffset?),
-                LearnerCount = default(int?),
+                Status = JobStatus.InProgress
             };
+            
+            var parentMessageId = Guid.NewGuid();
 
-           await testEndPointRepository.CreateMonitoringJob(monthEndJob);
+            var jobStepModels = new List<JobStepModel>();
+
+            foreach (var levyPaymentsOnMonthEndCommand in processLevyPaymentsOnMonthEndCommands)
+            {
+                var monthEndStepJob = new JobStepModel
+                {
+                    Job =  monthEndJob,
+                    JobId = jobId,
+                    MessageId = levyPaymentsOnMonthEndCommand.CommandId,
+                    MessageName = levyPaymentsOnMonthEndCommand.GetType().FullName,
+                    ParentMessageId = parentMessageId,
+                    Status = JobStepStatus.Queued
+                };
+
+                jobStepModels.Add(monthEndStepJob);
+            }
+
+            jobStepModels.Add(new JobStepModel
+            {
+                Job = monthEndJob,
+                JobId = jobId,
+                MessageId = processProviderMonthEndCommand.CommandId,
+                MessageName = processProviderMonthEndCommand.GetType().FullName,
+                ParentMessageId = parentMessageId,
+                Status = JobStepStatus.Queued
+            });
+
+
+            await testEndPointRepository.CreateMonitoringJob(monthEndJob, jobStepModels);
         }
 
 

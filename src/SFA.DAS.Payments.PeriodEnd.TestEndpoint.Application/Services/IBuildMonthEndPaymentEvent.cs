@@ -16,6 +16,12 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services
         Task<List<ProcessLevyPaymentsOnMonthEndCommand>> CreateProcessLevyPaymentsOnMonthEndCommand(long ukprn, short academicYear, byte period, long jobId);
         Task<List<ResetCacheCommand>> CreateDataLockResetCommand();
         long GenerateId(int maxValue = 1000000000);
-        Task CreateMonitoringJob(long ukprn, short academicYear, byte period, long jobId);
+
+        Task CreateMonitoringJob(long ukprn,
+            short academicYear,
+            byte period,
+            long jobId,
+            List<ProcessLevyPaymentsOnMonthEndCommand> processLevyPaymentsOnMonthEndCommands,
+            ProcessProviderMonthEndCommand processProviderMonthEndCommand);
     }
 }

@@ -16,6 +16,7 @@ using SFA.DAS.Payments.Application.Repositories;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.DataLocks.Messages.Internal;
 using SFA.DAS.Payments.FundingSource.Messages.Internal.Commands;
+using SFA.DAS.Payments.Monitoring.Jobs.Data;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Services;
 using SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers;
@@ -53,7 +54,9 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint
             var config = Configuration.GetSection("TestEndpointConfiguration").Get<TestEndpointConfiguration>();
 
             services.AddSingleton< ITestEndpointConfiguration>(config);
-            services.AddTransient<ITestEndPointDataContext>(x => new TestEndPointDataContext(config.PaymentsConnectionString));
+            services.AddTransient<IPaymentsDataContext>(x => new PaymentsDataContext(config.PaymentsConnectionString));
+            services.AddTransient<IJobsDataContext>(x => new JobsDataContext(config.PaymentsConnectionString));
+            
             services.AddTransient<IEndpointInstanceFactory>(x => new EndpointInstanceFactory(BuildEndpointConfiguration(config)));
             services.AddTransient<IBuildMonthEndPaymentEvent, BuildMonthEndPaymentEvent>();
             services.AddTransient<ITestEndPointRepository, TestEndPointRepository>();

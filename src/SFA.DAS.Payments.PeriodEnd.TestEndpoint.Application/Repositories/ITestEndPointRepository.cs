@@ -11,6 +11,6 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Application.Repositories
         Task<List<SubmittedLearnerAimModel>> GetProviderLearnerAims(long ukprn, CancellationToken cancellationToken = default(CancellationToken));
         Task<List<long>> GetAccountIds(long ukprn, CancellationToken cancellationToken = default(CancellationToken));
         Task<List<long>> GetUkprns(CancellationToken cancellationToken = default(CancellationToken));
-        Task CreateMonitoringJob(JobModel job, CancellationToken cancellationToken = default(CancellationToken));
+        Task CreateMonitoringJob(JobModel job, List<JobStepModel> jobSteps, CancellationToken cancellationToken = default(CancellationToken));
     }
 }
