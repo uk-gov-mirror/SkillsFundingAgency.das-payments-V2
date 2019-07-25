@@ -51,7 +51,7 @@ namespace SFA.DAS.Payments.PeriodEnd.TestEndpoint.Controllers
          
             var endpointInstance = await endpointInstanceFactory.GetEndpointInstance().ConfigureAwait(false);
 
-            await endpointInstance.Send(processProviderMonthEndCommand).ConfigureAwait(false);
+           // await endpointInstance.Send(processProviderMonthEndCommand).ConfigureAwait(false);
             foreach (var levyMonthEndCommand in levyMonthEndCommands)
             {
                 await endpointInstance.Send(levyMonthEndCommand).ConfigureAwait(false);
