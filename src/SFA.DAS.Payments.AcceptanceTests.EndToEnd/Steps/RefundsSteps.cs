@@ -46,6 +46,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
 
             if (PreviousIlr == null) PreviousIlr = new List<Training>();
 
+            // clear out existing ilrs for this provider
+            PreviousIlr = PreviousIlr.Where(pilr => pilr.Ukprn != provider.Ukprn).ToList();
+
             PreviousIlr.AddRange(newIlrSubmission);
         }
 
@@ -74,6 +77,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             if (PreviousIlr == null || PreviousIlr.All(u => u.Ukprn != provider.Ukprn))
             {
                 var providerPreviousIlr = CreateTrainingFromLearners(provider.Ukprn);
+
+                // Clear out previousIlrs which have the same provider before adding them.
+                PreviousIlr = PreviousIlr.Where(pilr => pilr.Ukprn != provider.Ukprn).ToList();
                 PreviousIlr.AddRange(providerPreviousIlr);
             }
         }
@@ -117,7 +123,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         public async Task WhenIlrFileIsSubmittedForTheLearnersInCollectionPeriod(string collectionPeriodText)
         {
             Task ClearCache() => HandleIlrReSubmissionForTheLearners(collectionPeriodText, TestSession.Provider);
-            await Scope.Resolve<IIlrService>().PublishLearnerRequest(PreviousIlr, CurrentIlr, TestSession.Learners, collectionPeriodText, featureNumber.Extract(), ClearCache);
+            await Scope.Resolve<IIlrService>().PublishLearnerRequest(PreviousIlr, CurrentIlr, TestSession.Learners, collectionPeriodText, featureNumber.Extract(), ClearCache, TestSession.Provider.Ukprn);
         }
 
         [When(@"the ILR file is submitted for the learners for the collection period (.*) by ""(.*)""")]
@@ -125,7 +131,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         public async Task WhenIlrFileIsSubmittedForTheLearnersInCollectionPeriod(string collectionPeriodText, string providerIdentifier)
         {
             var provider = TestSession.GetProviderByIdentifier(providerIdentifier);
-            await HandleIlrReSubmissionForTheLearners(collectionPeriodText, provider).ConfigureAwait(false);
+            Task ClearCache() => HandleIlrReSubmissionForTheLearners(collectionPeriodText, provider);
+
+            await Scope.Resolve<IIlrService>().PublishLearnerRequest(PreviousIlr, CurrentIlr, TestSession.Learners, collectionPeriodText, featureNumber.Extract(), ClearCache, provider.Ukprn);
         }
 
         [Then(@"only the following provider payments will be recorded")]

@@ -43,39 +43,43 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             this.dataContext = dataContext;
         }
 
-        public async Task PublishLearnerRequest(List<Training> previousIlr, List<Training> currentIlr, List<Learner> learners, string collectionPeriodText, string featureNumber, Func<Task> clearCache)
+        public async Task PublishLearnerRequest(List<Training> previousIlr, List<Training> currentIlr, List<Learner> learners, string collectionPeriodText, string featureNumber, Func<Task> clearCache, long ukprn)
         {
             var collectionYear = collectionPeriodText.ToDate().Year;
             var collectionPeriod = new CollectionPeriodBuilder().WithSpecDate(collectionPeriodText).Build().Period;
 
-            if (currentIlr != null && currentIlr.Any())
+            // allow for multiple providers.
+            var filteredIlr = new List<Training>();
+            filteredIlr.AddRange(currentIlr.Where(i=>i.Ukprn == ukprn));
+
+            if (filteredIlr.Any())
             {
                 // convert to TestSession.Learners
                 learners = new List<Learner>();
 
-                learners.AddRange(currentIlr.DistinctBy(ilr => ilr.LearnerId).Select(dist => new Learner()
+                learners.AddRange(filteredIlr.DistinctBy(ilr => ilr.LearnerId).Select(dist => new Learner()
                 {
                     Ukprn = dist.Ukprn, Uln = dist.Uln, LearnerIdentifier = dist.LearnerId,
                     PostcodePrior = dist.PostcodePrior, EefCode = dist.EefCode, Restart = dist.Restart,
-                    EmploymentStatusMonitoring = CreateLearnerEmploymentStatusMonitoringFromTraining(previousIlr?.Single(p=>p.LearnerId == dist.LearnerId), dist)
+                    EmploymentStatusMonitoring = CreateLearnerEmploymentStatusMonitoringFromTraining(previousIlr?.Single(p=>p.LearnerId == dist.LearnerId && p.Ukprn == dist.Ukprn), dist)
                 }));
 
                 foreach (var learner in learners)
                 {
-                    CreateAimsForIlrLearner(learner, currentIlr.SingleOrDefault(c=>c.LearnerId == learner.LearnerIdentifier));
+                    CreateAimsForIlrLearner(learner, filteredIlr.SingleOrDefault(c=>c.LearnerId == learner.LearnerIdentifier));
                 }
             }
 
             var learnerMutator = LearnerMutatorFactory.Create(featureNumber, learners);
 
-            var ilrFile = await tdgService.GenerateIlrTestData(learnerMutator, (int)testSession.Provider.Ukprn);
+            var ilrFile = await tdgService.GenerateIlrTestData(learnerMutator, Convert.ToInt32(ukprn));
 
-            await RefreshTestSessionLearnerFromIlr(ilrFile.Value, learners);
+            await RefreshTestSessionLearnerFromIlr(ukprn, ilrFile.Value, learners);
 
             // this needs to be called here as the LearnRefNumber is updated to match the ILR in RefreshTestSessionLearnerFromIlr above
             await clearCache();
 
-            await StoreAndPublishIlrFile((int)testSession.Provider.Ukprn, ilrFileName: ilrFile.Key, ilrFile: ilrFile.Value, collectionYear: collectionYear, collectionPeriod: collectionPeriod);
+            await StoreAndPublishIlrFile(ukprn, ilrFileName: ilrFile.Key, ilrFile: ilrFile.Value, collectionYear: collectionYear, collectionPeriod: collectionPeriod);
         }
 
         private List<EmploymentStatusMonitoring> CreateLearnerEmploymentStatusMonitoringFromTraining(Training previousIlr, Training currentIlr)
@@ -127,7 +131,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             learner.Aims.Add(aim);
         }
 
-        private async Task RefreshTestSessionLearnerFromIlr(string ilrFile, IEnumerable<Learner> learners)
+        private async Task RefreshTestSessionLearnerFromIlr(long ukprn, string ilrFile, IEnumerable<Learner> learners)
         {
             XNamespace xsdns = tdgService.IlrNamespace;
             var xDoc = XDocument.Parse(ilrFile);
@@ -136,13 +140,13 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             for (var i = 0; i < learnersEnumeration.Count(); i++)
             {
                 var request = learnersEnumeration.Skip(i).Take(1).First();
-                var testSessionLearner = testSession.GetLearner(testSession.Provider.Ukprn, request.LearnerIdentifier);
+                var testSessionLearner = testSession.GetLearner(ukprn, request.LearnerIdentifier);
                 var originalUln = testSessionLearner.Uln;
                 var learner = learnerDescendants.Skip(i).Take(1).First();
                 testSessionLearner.LearnRefNumber = learner.Elements(xsdns + "LearnRefNumber").First().Value;
                 testSessionLearner.Uln = long.Parse(learner.Elements(xsdns + "ULN").First().Value);
 
-                await UpdatePaymentHistoryTables(testSessionLearner.Ukprn, originalUln, testSessionLearner.Uln,
+                await UpdatePaymentHistoryTables(ukprn, originalUln, testSessionLearner.Uln,
                     testSessionLearner.LearnRefNumber);
             }
         }
@@ -159,7 +163,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             await dataContext.SaveChangesAsync();
         }
 
-        private async Task StoreAndPublishIlrFile(int ukprn, string ilrFileName, string ilrFile, int collectionYear, int collectionPeriod)
+        private async Task StoreAndPublishIlrFile(long ukprn, string ilrFileName, string ilrFile, int collectionYear, int collectionPeriod)
         {
             await StoreIlrFile(ukprn, ilrFileName, ilrFile);
 
@@ -167,7 +171,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
 
         }
 
-        private async Task PublishIlrFile(int ukprn, string ilrFileName, string ilrFile, int collectionYear, int collectionPeriod)
+        private async Task PublishIlrFile(long ukprn, string ilrFileName, string ilrFile, int collectionYear, int collectionPeriod)
         {
             var submission = new SubmissionModel(EnumJobType.IlrSubmission, ukprn)
             {
@@ -210,7 +214,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
 
         }
 
-        private async Task StoreIlrFile(int ukPrn, string ilrFileName, string ilrFile)
+        private async Task StoreIlrFile(long ukPrn, string ilrFileName, string ilrFile)
         {
             var byteArray = Encoding.UTF8.GetBytes(ilrFile);
             var stream = new MemoryStream(byteArray);

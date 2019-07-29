@@ -111,7 +111,10 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                 CurrentIlr = new List<Training>();
 
             if (Config.ValidateDcAndDasServices)
-                CurrentIlr.Clear();
+            {
+                // Remove any pre-existing ilr's for a given provider.
+                CurrentIlr = CurrentIlr.Where(i => i.Ukprn != ukprn).ToList();
+            }
 
             CurrentIlr.AddRange(ilr);
         }
@@ -778,7 +781,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         protected async Task MatchRequiredPayments(Table table, Provider provider)
         {
             var expectedPayments = CreatePayments(table, provider.Ukprn);
-            var matcher = new RequiredPaymentEventMatcher(provider, CurrentCollectionPeriod, expectedPayments, CurrentIlr, CurrentPriceEpisodes);
+            var matcher = new RequiredPaymentEventMatcher(provider, CurrentCollectionPeriod, expectedPayments, CurrentIlr.Where(i=>i.Ukprn == provider.Ukprn).ToList(), CurrentPriceEpisodes);
             await WaitForIt(() => matcher.MatchPayments(), "Required Payment event check failure");
         }
 

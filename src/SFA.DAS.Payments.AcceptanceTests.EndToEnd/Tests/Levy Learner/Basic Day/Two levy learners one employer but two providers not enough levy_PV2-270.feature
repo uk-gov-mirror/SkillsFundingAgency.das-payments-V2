@@ -80,8 +80,8 @@ Scenario Outline: Two levy learners, one employer but two providers and not enou
 		| learner b  | 01/Sep/Last Academic Year | 12 months        | 15000                | 01/Sep/Last Academic Year           |                        |                                       | 12 months       | completed         | Act1          | 1                   | ZPROG001      | 593            | 1            | 20             | 19+ Apprenticeship (From May 2017) Levy Contract | 90%                         |
 	And price details as follows		
        | Provider   | Learner ID | Price Episode Id | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Contract Type | Aim Sequence Number | SFA Contribution Percentage |
-       | provider a | learner a  | pe-1             | 7500                 | 01/Sep/Last Academic Year           |                        | 01/Sep/Last Academic Year             | Act1          | 1                   | 90%                         |
-       | provider b | learner b  | pe-2             | 15000                | 01/Sep/Last Academic Year           |                        | 01/Sep/Last Academic Year             | Act1          | 1                   | 90%                         |
+       | provider a | learner a  | pe-1             | 7500                 | 01/Sep/Last Academic Year           |                        |                                       | Act1          | 1                   | 90%                         |
+       | provider b | learner b  | pe-2             | 15000                | 01/Sep/Last Academic Year           |                        |                                       | Act1          | 1                   | 90%                         |
 	When the amended ILR file is re-submitted for the learners in the collection period <Collection_Period> by "provider a"
 	When the amended ILR file is re-submitted for the learners in the collection period <Collection_Period> by "provider b"
 	Then the following learner earnings should be generated for "provider a"
