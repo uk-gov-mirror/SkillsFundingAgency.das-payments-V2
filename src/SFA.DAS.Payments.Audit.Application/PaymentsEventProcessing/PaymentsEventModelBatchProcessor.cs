@@ -61,7 +61,9 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing
             {
                 try
                 {
+                    logger.LogDebug("Opening sql connection");
                     await sqlConnection.OpenAsync(cancellationToken);
+                    logger.LogDebug("opened sql connection");
                     using (var bulkCopy = new SqlBulkCopy(sqlConnection))
                     {
                         foreach (var table in data)
