@@ -19,7 +19,6 @@
     [Status] TINYINT NOT NULL,
     [IsLevyPayer] BIT NOT NULL,
 	CreationDate DATETIMEOFFSET NOT NULL CONSTRAINT DF_Apprenticeship__CreationDate DEFAULT (SYSDATETIMEOFFSET()),
-
 )
 
 GO
@@ -31,5 +30,12 @@ CREATE INDEX [IX_Apprenticeship__Id_Ukprn_Uln_Account] ON [Payments2].[Apprentic
 	Uln, 
 	AccountId
 )
+
+GO
+
+CREATE INDEX [IX_Apprenticeship__Uln] ON [Payments2].[Apprenticeship]
+(
+	Uln
+) 
 
 GO
