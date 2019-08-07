@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Microsoft.ServiceFabric.Services.Runtime;
-using Polly;
 using SFA.DAS.Payments.Application.Infrastructure.Ioc;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
@@ -19,15 +18,13 @@ namespace SFA.DAS.Payments.Monitoring.JobsStatusService
     {
         private readonly IPaymentLogger logger;
         private readonly TimeSpan interval;
-        private readonly Policy policy;
+
         public JobsStatusService(StatelessServiceContext context, IPaymentLogger logger, IConfigurationHelper configurationHelper)
             : base(context)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             var intervalInSeconds = int.Parse(configurationHelper.GetSetting("IntervalInSeconds"));
             interval = TimeSpan.FromSeconds(intervalInSeconds);
-            policy = Policy.Handle<Exception>()
-                .CircuitBreakerAsync(5, TimeSpan.FromSeconds(int.Parse(configurationHelper.GetSetting("FailureTimeoutInSeconds"))));
         }
 
         protected override async Task RunAsync(CancellationToken cancellationToken)
@@ -43,7 +40,8 @@ namespace SFA.DAS.Payments.Monitoring.JobsStatusService
                         using (var operation = telemetry.StartOperation("CompletedJobsProcessing"))
                         {
                             var completedJobsService = scope.Resolve<ICompletedJobsService>();
-                            await policy.ExecuteAsync(() => completedJobsService.UpdateCompletedJobs(cancellationToken));
+                            
+                            await completedJobsService.UpdateCompletedJobs(cancellationToken);
                             telemetry.StopOperation(operation);
                         }
                     }

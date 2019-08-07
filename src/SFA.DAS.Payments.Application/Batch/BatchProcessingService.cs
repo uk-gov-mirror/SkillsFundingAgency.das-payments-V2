@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Polly;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Core.Configuration;
 
@@ -19,8 +18,7 @@ namespace SFA.DAS.Payments.Application.Batch
         private readonly IPaymentLogger logger;
         private readonly TimeSpan batchInterval;
         private readonly int batchSize;
-        private readonly Policy policy;
-
+        
         public BatchProcessingService(IConfigurationHelper configurationHelper, IBatchScopeFactory batchScopeFactory, IPaymentLogger logger)
         {
             this.batchScopeFactory = batchScopeFactory ?? throw new ArgumentNullException(nameof(batchScopeFactory));
@@ -28,8 +26,6 @@ namespace SFA.DAS.Payments.Application.Batch
             var intervalInSeconds = int.Parse(configurationHelper.GetSetting("BatchIntervalInSeconds"));
             batchInterval = TimeSpan.FromSeconds(intervalInSeconds);
             batchSize = int.Parse(configurationHelper.GetSetting("BatchSize"));
-            policy = Policy.Handle<Exception>()
-                .CircuitBreakerAsync(5, TimeSpan.FromSeconds(int.Parse(configurationHelper.GetSetting("BatchFailureTimeoutInSeconds"))));
         }
 
         public async Task RunAsync(CancellationToken cancellationToken)
@@ -44,7 +40,7 @@ namespace SFA.DAS.Payments.Application.Batch
 
                     try
                     {
-                        await policy.ExecuteAsync(() => StorePayments(cancellationToken));
+                        await StorePayments(cancellationToken);
                     }
                     catch (Exception ex)
                     {

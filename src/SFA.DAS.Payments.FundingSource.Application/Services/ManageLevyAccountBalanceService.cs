@@ -4,9 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
-using Polly;
-using Polly.CircuitBreaker;
-using Polly.Retry;
 using SFA.DAS.EAS.Account.Api.Client;
 using SFA.DAS.EAS.Account.Api.Types;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
@@ -30,8 +27,7 @@ namespace SFA.DAS.Payments.FundingSource.Application.Services
         private readonly ILevyAccountBulkCopyRepository levyAccountBulkWriter;
         private readonly int batchSize;
         private int totalPageSize;
-        private readonly AsyncRetryPolicy retryPolicy;
-
+        
         public ManageLevyAccountBalanceService(ILevyFundingSourceRepository repository,
             IAccountApiClient accountApiClient,
             IPaymentLogger logger,
@@ -44,7 +40,6 @@ namespace SFA.DAS.Payments.FundingSource.Application.Services
             this.levyAccountBulkWriter = levyAccountBulkWriter;
             this.batchSize = batchSize;
 
-            retryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(5, i => TimeSpan.FromMinutes(1));
         }
 
         public async Task RefreshLevyAccountDetails(CancellationToken cancellationToken = default(CancellationToken))
@@ -53,7 +48,7 @@ namespace SFA.DAS.Payments.FundingSource.Application.Services
 
             var page = 1;
 
-            await retryPolicy.ExecuteAsync(GetTotalPageSize).ConfigureAwait(false);
+            await GetTotalPageSize().ConfigureAwait(false);
 
             while (page <= totalPageSize)
             {
