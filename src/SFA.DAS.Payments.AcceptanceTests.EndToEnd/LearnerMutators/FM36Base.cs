@@ -297,8 +297,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             var programmeAim = messageLearner.LearningDelivery.Last(ld => ld.AimType == 1);
             var componentAim = messageLearner.LearningDelivery.First(ld => ld.AimType == 3);
             componentAim.LearnAimRef = learner.Aims.All(x => x.IsMainAim)
-                ? learnAimRef
-                : learner.Aims.First(x => !x.IsMainAim).AimReference;
+                                           ? learnAimRef
+                                           : learner.Aims.First(x => !x.IsMainAim).AimReference;
             componentAim.FundModel = programmeAim.FundModel;
             componentAim.ProgType = programmeAim.ProgType;
             componentAim.FworkCode = programmeAim.FworkCode;
@@ -337,6 +337,11 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
                 SetCourseCodes(otherAim, otherLearningDelivery);
 
                 SetPriorLearnFundingAdjustment(otherAim, otherLearningDelivery);
+
+                if (otherAim.Restart)
+                {
+                    DCT.TestDataGenerator.Helpers.AddLearningDeliveryRestartFAM(otherLearningDelivery);
+                }
             }
         }
 
