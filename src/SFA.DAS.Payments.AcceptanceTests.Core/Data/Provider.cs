@@ -9,5 +9,6 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Data
         public long JobId { get; set; }
         public DateTime IlrSubmissionTime { get; set; }
         public bool MonthEndJobIdGenerated { get; set; }
+        public bool InError { get; set; }
     }
 }

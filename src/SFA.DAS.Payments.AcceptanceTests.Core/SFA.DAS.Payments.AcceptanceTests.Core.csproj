@@ -388,7 +388,7 @@
     <Compile Include="Automation\LearnRefNumberGenerator.cs" />
     <Compile Include="Automation\TestSession.cs" />
     <Compile Include="BindingsBase.cs" />
-    <Compile Include="Data\AdditionalIlrData.cs" />
+    <Compile Include="Data\AppEarnHistoryData.cs" />
     <Compile Include="Data\Configurations\ProviderModelConfiguration.cs" />
     <Compile Include="Data\Earning.cs" />
     <Compile Include="Data\Employer.cs" />

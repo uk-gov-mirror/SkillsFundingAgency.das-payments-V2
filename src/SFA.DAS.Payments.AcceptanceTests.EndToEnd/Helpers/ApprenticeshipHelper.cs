@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MoreLinq;
+using SFA.DAS.Payments.AcceptanceTests.Core.Data;
 
 namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Helpers
 {
@@ -49,7 +50,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Helpers
                 }
                 else
                 {
-                    apprenticeshipSpec.Ukprn = testSession.GetProviderByIdentifier(apprenticeshipSpec.Provider).Ukprn;
+                    var suppliedProvider = testSession.GetProviderByIdentifier(apprenticeshipSpec.Provider);
+                    apprenticeshipSpec.Ukprn = suppliedProvider.Ukprn;
                 }
             }
 
@@ -62,9 +64,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Helpers
 
             if (apprenticeshipSpec.Uln == default(long))
             {
-                var learnerId = string.IsNullOrWhiteSpace(apprenticeshipSpec.Identifier)
-                    ? testSession.Learner.LearnerIdentifier
-                    : apprenticeshipSpec.LearnerId;
+                var learnerId = !string.IsNullOrWhiteSpace(apprenticeshipSpec.LearnerId)
+                    ? apprenticeshipSpec.LearnerId
+                    : testSession.Learner.LearnerIdentifier;
 
                 apprenticeshipSpec.Uln = testSession.GetLearner(apprenticeshipSpec.Ukprn, learnerId).Uln;
             }

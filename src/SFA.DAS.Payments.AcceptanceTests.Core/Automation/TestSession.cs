@@ -10,14 +10,13 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Automation
 
     public class TestSession
     {
-        private const string LearnerIdentifierA = "learner a";
         private const string TestEmployer = "test employer";
         private const string TestProvider = "Test Provider";
 
         public LearnRefNumberGenerator LearnRefNumberGenerator { get; }
         public string SessionId { get; }
         public List<Learner> Learners { get; private set; }
-        public Learner Learner => GetLearner(Provider.Ukprn, LearnerIdentifierA);
+        public Learner Learner => GetLearner(Provider.Ukprn, null);
         public Employer Employer => GetEmployer(TestEmployer);
 
         public DateTime IlrSubmissionTime { get; set; }
@@ -35,6 +34,14 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Automation
 
         private readonly IUkprnService ukprnService;
         private readonly IUlnService ulnService;
+
+        public long? GetJobIdByProvider(string providerIdentifier)
+        {
+            if (string.IsNullOrWhiteSpace(providerIdentifier)) return null;
+
+            var provider = Providers.SingleOrDefault(p => p.Identifier == providerIdentifier);
+            return provider?.JobId;
+        }
 
         public Employer GetEmployer(string identifier)
         {
@@ -78,11 +85,6 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Automation
             LearnRefNumberGenerator = new LearnRefNumberGenerator(SessionId);
             Employers = new List<Employer>();
 
-        }
-
-        public void ClearLearnersExcept(List<Learner> learners)
-        {
-            Learners = Learners.Where(l => learners.Exists(e => e.Ukprn == l.Ukprn && e.LearnerIdentifier == l.LearnerIdentifier)).ToList();
         }
 
         public long GenerateId(int maxValue = 1000000)

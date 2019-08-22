@@ -57,111 +57,80 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             var collectionYear = collectionPeriodText.ToDate().Year;
             var collectionPeriod = new CollectionPeriodBuilder().WithSpecDate(collectionPeriodText).Build().Period;
 
-            if (currentIlr != null && currentIlr.Any())
+            if (currentIlr != null && currentIlr.Any() && (learners == null || !learners.Any()))
             {
-                // convert to TestSession.Learners
-                learners = new List<Learner>();
-
-                foreach (var learner in currentIlr.DistinctBy(ilr => ilr.LearnerId))
+                foreach (var ilr in currentIlr)
                 {
-                    var testSessionLearner = testSession.GetLearner(learner.Ukprn, learner.LearnerId);
-                    learners.Add(testSessionLearner);
-                    testSessionLearner.Uln = learner.Uln;
-                    testSessionLearner.PostcodePrior = learner.PostcodePrior;
-                    testSessionLearner.EefCode = learner.EefCode;
-                    testSessionLearner.EmploymentStatusMonitoring = CreateLearnerEmploymentStatusMonitoringFromTraining(previousIlr?.Single(p => p.LearnerId == learner.LearnerId), learner);
-                    testSessionLearner.Restart = learner.Restart;
-                    CreateAimsForIlrLearner(testSessionLearner, learner);
-                }
+                    Provider provider;
 
-                testSession.ClearLearnersExcept(learners);
+                    if (ilr.Ukprn == default(long))
+                    {
+                        provider = testSession.GetProviderByIdentifier(null);
+                    }
+                    else
+                    {
+                        provider = testSession.Providers.Single(p => p.Ukprn == ilr.Ukprn);
+                    }
+
+                    var learner = testSession.GenerateLearner(provider.Ukprn);
+                    learner.UpdateFromTrainingType(ilr, null);
+                }
+            }
+            else if (learners != null && learners.Any() && learners.All(l => l.Aims == null || !l.Aims.Any()))
+            {
+                // Learners provided, but are incomplete
+                foreach (var learner in learners)
+                {
+                    Training ilr;
+                    // may need refactoring - not sure if these properties will be available at this point.
+                    if (currentIlr.Count() > 1)
+                    {
+                        ilr = currentIlr.Single(i => i.Ukprn == learner.Ukprn && i.LearnerId == learner.LearnerIdentifier);
+                    }
+                    else
+                    {
+                        ilr = currentIlr.Single(i => i.Ukprn == learner.Ukprn);
+                    }
+
+                    var preIlr = previousIlr.SingleOrDefault(i => i.LearnerId == learner.LearnerIdentifier);
+
+                    learner.UpdateFromTrainingType(ilr, preIlr);
+                }
             }
 
             var learnerMutator = LearnerMutatorFactory.Create(featureNumber, learners);
 
-            var ilrFile = await tdgService.GenerateIlrTestData(learnerMutator, (int)testSession.Provider.Ukprn);
+            // Assumptions - all learners are for the same provider (per call to this method)
+            var ilrFile = await tdgService.GenerateIlrTestData(learnerMutator, (int)learners.First().Ukprn);
 
             await RefreshTestSessionLearnerFromIlr(ilrFile.Value, learners);
 
             if (learners.Any(l => l.EarningsHistory != null) && !testSession.AtLeastOneScenarioCompleted)
             {
-                await appEarnHistoryService.DeleteHistoryAsync(testSession.Provider.Ukprn);
+                await appEarnHistoryService.DeleteHistoryAsync(learners.First().Ukprn);
                 await appEarnHistoryService.AddHistoryAsync(learners);
             }
 
             // this needs to be called here as the LearnRefNumber is updated to match the ILR in RefreshTestSessionLearnerFromIlr above
             await clearCache();
 
-            await StoreAndPublishIlrFile((int)testSession.Provider.Ukprn, ilrFileName: ilrFile.Key, ilrFile: ilrFile.Value, collectionYear: collectionYear, collectionPeriod: collectionPeriod);
-        }
-
-        private List<EmploymentStatusMonitoring> CreateLearnerEmploymentStatusMonitoringFromTraining(Training previousIlr, Training currentIlr)
-        {
-            var employmentStatusMonitoringList = new List<EmploymentStatusMonitoring>();
-            if (!string.IsNullOrWhiteSpace(previousIlr?.Employer) || !string.IsNullOrWhiteSpace(previousIlr?.SmallEmployer))
-            {
-                employmentStatusMonitoringList.Add(new EmploymentStatusMonitoring()
-                {
-                    LearnerId = previousIlr.LearnerId,
-                    EmploymentStatusApplies = !string.IsNullOrWhiteSpace(previousIlr.EmploymentStatusApplies) ? previousIlr.EmploymentStatusApplies : previousIlr.StartDate.ToDate().AddMonths(-6).ToString(),
-                    EmploymentStatus = !string.IsNullOrWhiteSpace(previousIlr.EmploymentStatus) ? previousIlr.EmploymentStatus : "in paid employment",
-                    Employer = previousIlr.Employer,
-                    SmallEmployer = previousIlr.SmallEmployer
-                });
-            }
-
-            if (previousIlr?.EmploymentStatusApplies != currentIlr.EmploymentStatusApplies)
-            {
-                employmentStatusMonitoringList.Add(new EmploymentStatusMonitoring()
-                {
-                    LearnerId = currentIlr.LearnerId,
-                    EmploymentStatusApplies = currentIlr.EmploymentStatusApplies,
-                    EmploymentStatus = currentIlr.EmploymentStatus,
-                    Employer = currentIlr.Employer,
-                    SmallEmployer = currentIlr.SmallEmployer
-                });
-            }
-
-            return employmentStatusMonitoringList;
-        }
-
-        private void CreateAimsForIlrLearner(Learner learner, Training currentIlr)
-        {
-            var aim = new Aim(currentIlr);
-            if (!learner.Aims.Any())
-            {
-                aim.PriceEpisodes.Add(new Price()
-                {
-                    TotalTrainingPriceEffectiveDate = currentIlr.TotalTrainingPriceEffectiveDate,
-                    TotalTrainingPrice = currentIlr.TotalTrainingPrice,
-                    TotalAssessmentPriceEffectiveDate = currentIlr.TotalAssessmentPriceEffectiveDate,
-                    TotalAssessmentPrice = currentIlr.TotalAssessmentPrice,
-                    ContractType = currentIlr.ContractType,
-                    AimSequenceNumber = currentIlr.AimSequenceNumber,
-                    SfaContributionPercentage = currentIlr.SfaContributionPercentage,
-                    CompletionHoldBackExemptionCode = currentIlr.CompletionHoldBackExemptionCode,
-                    Pmr = currentIlr.Pmr
-                });
-            }
-            else
-            {
-                var priceEpisode = learner.Aims.Single().PriceEpisodes.Single();
-                aim.PriceEpisodes.Add(priceEpisode);
-            }
-
-            learner.Aims = new List<Aim> { aim };
+            await StoreAndPublishIlrFile((int)learners.First().Ukprn, ilrFileName: ilrFile.Key, ilrFile: ilrFile.Value, collectionYear: collectionYear, collectionPeriod: collectionPeriod);
         }
 
         private async Task RefreshTestSessionLearnerFromIlr(string ilrFile, IEnumerable<Learner> learners)
         {
             XNamespace xsdns = tdgService.IlrNamespace;
             var xDoc = XDocument.Parse(ilrFile);
+            var learningProvider = xDoc.Descendants(xsdns + "LearningProvider");
+            var ukprn = learningProvider.Elements(xsdns + "UKPRN").First().Value;
+
             var learnerDescendants = xDoc.Descendants(xsdns + "Learner");
             var learnersEnumeration = learners as Learner[] ?? learners.ToArray();
+
             for (var i = 0; i < learnersEnumeration.Count(); i++)
             {
                 var request = learnersEnumeration.Skip(i).Take(1).First();
-                var testSessionLearner = testSession.GetLearner(testSession.Provider.Ukprn, request.LearnerIdentifier);
+                var testSessionLearner = testSession.GetLearner(int.Parse(ukprn), request.LearnerIdentifier);
                 var originalUln = testSessionLearner.OriginalUln ?? testSessionLearner.Uln;
                 var learner = learnerDescendants.Skip(i).Take(1).First();
                 testSessionLearner.LearnRefNumber = learner.Elements(xsdns + "LearnRefNumber").First().Value;
@@ -171,7 +140,6 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
                     testSessionLearner.LearnRefNumber);
             }
         }
-
 
         private async Task UpdatePaymentHistoryTables(long ukprn, long originalUln, long newUln, string learnRefNumber)
         {

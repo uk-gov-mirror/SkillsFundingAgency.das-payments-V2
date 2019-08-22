@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
+using SFA.DAS.Payments.AcceptanceTests.Core.Data;
 using SFA.DAS.Payments.Messages.Core.Events;
 using SFA.DAS.Payments.Model.Core.Entities;
 using SFA.DAS.Payments.Monitoring.Jobs.Data;
@@ -45,7 +46,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core
                 Context.Set(item, key);
         }
 
-        protected async Task WaitForIt(Func<Task<bool>> lookForIt, string failText)
+        protected async Task WaitForIt(Func<Task<bool>> lookForIt, string failText, Provider provider = null)
         {
             var endTime = DateTime.Now.Add(Config.TimeToWait);
             var lastRun = false;
@@ -64,10 +65,10 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core
 
                 await Task.Delay(Config.TimeToPause);
             }
-            Assert.Fail($"{failText}  Time: {DateTime.Now:G}.  Ukprn: {TestSession.Ukprn}. Job Id: {TestSession.JobId}");
+            Assert.Fail($"{failText}  Time: {DateTime.Now:G}.  Ukprn: {provider?.Ukprn ?? TestSession.Ukprn}. Job Id: {TestSession.GetJobIdByProvider(provider.Identifier) ?? TestSession.JobId}");
         }
 
-        protected async Task WaitForIt(Func<bool> lookForIt, string failText)
+        protected async Task WaitForIt(Func<bool> lookForIt, string failText, Provider provider = null)
         {
             var endTime = DateTime.Now.Add(Config.TimeToWait);
             var lastRun = false;
@@ -86,10 +87,10 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core
 
                 await Task.Delay(Config.TimeToPause);
             }
-            Assert.Fail($"{failText}  Time: {DateTime.Now:G}.  Ukprn: {TestSession.Ukprn}. Job Id: {TestSession.JobId}");
+            Assert.Fail($"{failText}  Time: {DateTime.Now:G}.  Ukprn: {provider?.Ukprn ?? TestSession.Ukprn}. Job Id: {TestSession.GetJobIdByProvider(provider.Identifier) ?? TestSession.JobId}");
         }
 
-        protected async Task WaitForIt(Func<(bool pass, string reason, bool final)> lookForIt, string failText)
+        protected async Task WaitForIt(Func<(bool pass, string reason, bool final)> lookForIt, string failText, Provider provider = null)
         {
             var endTime = DateTime.Now.Add(Config.TimeToWait);
             var reason = string.Empty;
@@ -112,10 +113,10 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core
                 await Task.Delay(Config.TimeToPause);
             }
 
-            Assert.Fail($"{failText} - {reason}  Time: {DateTime.Now:G}.  Ukprn: {TestSession.Ukprn}. Job Id: {TestSession.JobId}");
+            Assert.Fail($"{failText} - {reason}  Time: {DateTime.Now:G}.  Ukprn: {provider?.Ukprn ?? TestSession.Ukprn}. Job Id: {TestSession.GetJobIdByProvider(provider.Identifier) ?? TestSession.JobId}");
         }
 
-        protected async Task WaitForUnexpected(Func<(bool pass, string reason)> findUnexpected, string failText)
+        protected async Task WaitForUnexpected(Func<(bool pass, string reason)> findUnexpected, string failText, Provider provider = null)
         {
             var endTime = DateTime.Now.Add(Config.TimeToWaitForUnexpected);
             while (DateTime.Now < endTime)
@@ -123,7 +124,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core
                 var (pass, reason) = findUnexpected();
                 if (!pass)
                 {
-                    Assert.Fail($"{failText} - {reason}   Time: {DateTime.Now:G}.  Ukprn: {TestSession.Ukprn}. Job Id: {TestSession.JobId}");
+                    Assert.Fail($"{failText} - {reason}   Time: {DateTime.Now:G}.  Ukprn: {provider?.Ukprn ?? TestSession.Ukprn}. Job Id: {TestSession.GetJobIdByProvider(provider.Identifier) ?? TestSession.JobId}");
                 }
 
                 await Task.Delay(Config.TimeToPause);

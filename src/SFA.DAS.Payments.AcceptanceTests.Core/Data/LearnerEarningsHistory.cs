@@ -7,29 +7,26 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Data
 {
     public class LearnerEarningsHistory
     {
-        private readonly AdditionalIlrData additionalIlrData;
-
+        private readonly AppEarnHistoryData appEarnHistoryData;
         private readonly List<Earning> previousEarnings;
 
-       
-
-        public LearnerEarningsHistory(AdditionalIlrData additionalIlrData, IEnumerable<Earning> previousEarnings)
+        public LearnerEarningsHistory(AppEarnHistoryData appEarnHistoryData, IEnumerable<Earning> previousEarnings)
         {
-            this.additionalIlrData = additionalIlrData ?? new AdditionalIlrData();
+            this.appEarnHistoryData = appEarnHistoryData ?? new AppEarnHistoryData();
             this.previousEarnings = previousEarnings?.ToList() ?? new List<Earning>();
         }
 
-        public string CollectionYear => additionalIlrData.HistoryPeriod.ToDate().Year.ToString();
+        public string CollectionYear => appEarnHistoryData.HistoryPeriod.ToAcademicYear();
 
-        public int CollectionPeriod => additionalIlrData.HistoryPeriod.ToMonthPeriod();
+        public int CollectionPeriod => appEarnHistoryData.HistoryPeriod.ToMonthPeriod();
 
-        public int EmployerId => additionalIlrData.Employer.ToEmployerAccountId();
+        public int EmployerId => appEarnHistoryData.Employer.ToEmployerAccountId();
 
         public decimal? OnProgrammeEarningsToDate
         {
             get
             {
-                return additionalIlrData.CapPreviousEarningsToHistoryPeriod ? CappedPreviousEarnings.Sum(x=>x.OnProgramme) : previousEarnings.Sum(x=>x.OnProgramme); 
+                return appEarnHistoryData.CapPreviousEarningsToHistoryPeriod ? CappedPreviousEarnings.Sum(x=>x.OnProgramme) : previousEarnings.Sum(x=>x.OnProgramme); 
             }
         }
 
@@ -37,12 +34,12 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Data
 
         public decimal? BalancingEarningsToDate
         {
-            get { return additionalIlrData.CapPreviousEarningsToHistoryPeriod ? CappedPreviousEarnings.Sum(x => x.Balancing) : previousEarnings.Sum(x => x.Balancing); }
+            get { return appEarnHistoryData.CapPreviousEarningsToHistoryPeriod ? CappedPreviousEarnings.Sum(x => x.Balancing) : previousEarnings.Sum(x => x.Balancing); }
         }
 
         public decimal? CompletionEarningsToDate
         {
-            get { return additionalIlrData.CapPreviousEarningsToHistoryPeriod ? CappedPreviousEarnings.Sum(x => x.Completion) : previousEarnings.Sum(x => x.Completion); }
+            get { return appEarnHistoryData.CapPreviousEarningsToHistoryPeriod ? CappedPreviousEarnings.Sum(x => x.Completion) : previousEarnings.Sum(x => x.Completion); }
         }
 
         public DateTime? UpToEndDate(string originalStartDate)
@@ -57,18 +54,23 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Data
 
         private TimeSpan HistoryActualDuration(string originalStartDate)
         {
-            if (string.IsNullOrWhiteSpace(originalStartDate) || string.IsNullOrWhiteSpace(additionalIlrData.ActualDuration))
+            if (appEarnHistoryData.HistoryPeriod.Split('/').Length == 2)
+            {
+                return appEarnHistoryData.HistoryPeriod.ToDate().AddMonths(1) - originalStartDate.ToDate();
+            } 
+            
+            if (string.IsNullOrWhiteSpace(originalStartDate) || string.IsNullOrWhiteSpace(appEarnHistoryData.ActualDuration))
             {
                 return new TimeSpan();
             }
 
-            return additionalIlrData.ActualDuration.ToTimeSpan(originalStartDate).HasValue
-                       ? additionalIlrData.ActualDuration.ToTimeSpan(originalStartDate).Value
+            return appEarnHistoryData.ActualDuration.ToTimeSpan(originalStartDate).HasValue
+                       ? appEarnHistoryData.ActualDuration.ToTimeSpan(originalStartDate).Value
                        : new TimeSpan();
         }
 
         private List<Earning> CappedPreviousEarnings => previousEarnings?.Where(pe =>
-                                                                             pe.DeliveryPeriod.ToDate().Year <= Convert.ToInt32(CollectionYear) &&
+                                                                             pe.DeliveryPeriod.ToAcademicYear() == CollectionYear &&
                                                                              pe.DeliveryPeriod.ToMonthPeriod() <= CollectionPeriod).ToList();
     }
 }

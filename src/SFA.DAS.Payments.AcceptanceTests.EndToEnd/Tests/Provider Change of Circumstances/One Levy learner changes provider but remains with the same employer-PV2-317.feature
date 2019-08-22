@@ -6,12 +6,12 @@ Feature: One Levy learner changes provider but remains with the same employer-PV
 Scenario Outline: Levy learner changes provider but remains with the same employer PV2-317
 	Given the employer levy account balance in collection period <Collection_Period> is <Levy Balance>
 	And the "provider a" previously submitted the following learner details
-		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                  | SFA Contribution Percentage |
-		| 06/Aug/Current Academic Year | 12 months        | 6000                 | 06/Aug/Current Academic Year        | 1500                   | 06/Aug/Current Academic Year          |                 | continuing        | Act1          | 1                   | ZPROG001      | 51            | 25             | 19-24 Apprenticeship (From May 2017) Levy Contract | 90%                         |
+		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                | SFA Contribution Percentage |
+		| 01/Aug/Current Academic Year | 12 months        | 6000                 | 01/Aug/Current Academic Year        | 1500                   | 01/Aug/Current Academic Year          |                 | continuing        | Act1          | 1                   | ZPROG001      | 53            | 25             | 19+ Apprenticeship (From May 2017) Levy Contract | 90%                         |
     And the following commitments exist
 		| Identifier       | Provider   | start date                   | end date                  | agreed price | status    | effective from               | effective to                 | stop effective from          | Standard Code | Programme Type |
-		| Apprenticeship 1 | provider a | 01/Aug/Current Academic Year | 01/Aug/Next Academic Year | 7500         | cancelled | 01/Aug/Current Academic Year | 04/Mar/Current Academic Year | 05/Mar/Current Academic Year | 51            | 25             |
-		| Apprenticeship 2 | provider b | 05/Mar/Current Academic Year | 01/Aug/Next Academic Year | 4500         | active    | 05/Mar/Current Academic Year |                              |                              | 51            | 25             |
+		| Apprenticeship 1 | provider a | 01/Aug/Current Academic Year | 01/Aug/Next Academic Year | 7500         | cancelled | 01/Aug/Current Academic Year | 04/Mar/Current Academic Year | 05/Mar/Current Academic Year | 53            | 25             |
+		| Apprenticeship 2 | provider b | 05/Mar/Current Academic Year | 01/Aug/Next Academic Year | 4500         | active    | 05/Mar/Current Academic Year |                              |                              | 53            | 25             |
 	And the following earnings had been generated for the learner for "provider a"
         | Delivery Period           | On-Programme | Completion | Balancing |
         | Aug/Current Academic Year | 500          | 0          | 0         |
@@ -36,19 +36,29 @@ Scenario Outline: Levy learner changes provider but remains with the same employ
         | R06/Current Academic Year | Jan/Current Academic Year | 500           | Learning         |
         | R07/Current Academic Year | Feb/Current Academic Year | 500           | Learning         |
     But the "provider a" now changes the Learner details as follows
-		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                  | SFA Contribution Percentage |
-		| 06/Aug/Current Academic Year | 12 months        | 6000                 | 06/Aug/Current Academic Year        | 1500                   | 06/Aug/Current Academic Year          | 7 months        | withdrawn         | Act1          | 1                   | ZPROG001      | 51            | 25             | 19-24 Apprenticeship (From May 2017) Levy Contract | 90%                         |
+		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                | SFA Contribution Percentage |
+		| 01/Aug/Current Academic Year | 12 months        | 6000                 | 01/Aug/Current Academic Year        | 1500                   | 01/Aug/Current Academic Year          | 7 months        | withdrawn         | Act1          | 1                   | ZPROG001      | 53            | 25             | 19+ Apprenticeship (From May 2017) Levy Contract | 90%                         |
 
 	And the "provider b" is providing training for the following learners
-		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                  | SFA Contribution Percentage |
-		| 05/Mar/Current Academic Year | 5 months         | 3000                 | 05/Mar/Current Academic Year        | 1500                   | 05/Mar/Current Academic Year          |                 | continuing        | Act1          | 1                   | ZPROG001      | 51            | 25             | 19-24 Apprenticeship (From May 2017) Levy Contract | 90%                         |
+		| Start Date                   | Planned Duration | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Actual Duration | Completion Status | Contract Type | Aim Sequence Number | Aim Reference | Standard Code | Programme Type | Funding Line Type                                | SFA Contribution Percentage | 
+		| 05/Mar/Current Academic Year | 5 months         | 3000                 | 05/Mar/Current Academic Year        | 1500                   | 05/Mar/Current Academic Year          |                 | continuing        | Act1          | 1                   | ZPROG001      | 53            | 25             | 19+ Apprenticeship (From May 2017) Levy Contract | 90%                         | 
+ 
+	And aims details are changed as follows
+        | Provider   | Aim Type  | Aim Reference | Original Start Date          | Start Date                   | Planned Duration | Actual Duration | Aim Sequence Number | Standard Code | Programme Type | Funding Line Type                                | Completion Status | Restart |
+        | provider a | Programme | ZPROG001      |                              | 01/Aug/Current Academic Year | 12 months        | 7 months        | 1                   | 53            | 25             | 19+ Apprenticeship (From May 2017) Levy Contract | withdrawn         |         |
+        | provider b | Programme | ZPROG001      | 01/Aug/Current Academic Year | 05/Mar/Current Academic Year | 5 months         |                 | 1                   | 53            | 25             | 19+ Apprenticeship (From May 2017) Levy Contract | continuing        | true    |
 
 	And price details as follows
-		| Price Episode Id | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Contract Type | Aim Sequence Number | SFA Contribution Percentage |
-		| pe-1             | 6000                 | 06/Aug/Current Academic Year        | 1500                   | 06/Aug/Current Academic Year          | Act1          | 1                   | 90%                         |
-		| pe-2             | 3000                 | 06/Mar/Current Academic Year        | 1500                   | 05/Mar/Current Academic Year          | Act1          | 1                   | 90%                         |
+	    | Provider   | Price Episode Id | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Contract Type | Aim Sequence Number | SFA Contribution Percentage |
+	    | provider a | pe-1             | 6000                 | 01/Aug/Current Academic Year        | 1500                   | 01/Aug/Current Academic Year          | Act1          | 1                   | 90%                         |
+	    | provider b | pe-2             | 3000                 | 05/Mar/Current Academic Year        | 1500                   | 05/Mar/Current Academic Year          | Act1          | 1                   | 90%                         |
+	
+	And appEarnHistory is required as follows
+		| Provider   | Employer   | Actual Duration | Completion Status | History Period            | Cap Previous Earnings To History Period |
+		| provider a | employer 1 |                 | continuing        | Feb/Current Academic Year | true                                    |
+
 	When the amended ILR file is re-submitted for the learners in the collection period <Collection_Period> by "provider a"
-	When the ILR file is submitted for the learners for the collection period <Collection_Period> by "provider b"
+	And the ILR file is submitted for the learners for the collection period <Collection_Period> by "provider b"
 
 	Then the following learner earnings should be generated for "provider a"
 		| Delivery Period           | On-Programme | Completion | Balancing | Price Episode Identifier |

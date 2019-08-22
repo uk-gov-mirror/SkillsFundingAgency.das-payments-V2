@@ -107,8 +107,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             if (CurrentIlr == null)
                 CurrentIlr = new List<Training>();
 
-            if (Config.ValidateDcAndDasServices)
-                CurrentIlr.Clear();
+            //if (Config.ValidateDcAndDasServices)
+            //    CurrentIlr.Clear();
 
             CurrentIlr.AddRange(ilr);
         }
@@ -139,6 +139,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                 learner.Course.PathwayCode = ilrLearner.PathwayCode;
                 learner.EefCode = ilrLearner.EefCode;
                 learner.PostcodePrior = ilrLearner.PostcodePrior;
+                learner.Restart = ilrLearner.Restart;
                 if (ilrLearner.Uln != default(long))
                 {
                     learner.Uln = ilrLearner.Uln;
@@ -776,7 +777,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         {
             var expectedPayments = CreatePayments(table, provider.Ukprn);
             var matcher = new RequiredPaymentEventMatcher(provider, CurrentCollectionPeriod, expectedPayments, CurrentIlr, CurrentPriceEpisodes);
-            await WaitForIt(() => matcher.MatchPayments(), "Required Payment event check failure");
+            await WaitForIt(() => matcher.MatchPayments(), "Required Payment event check failure", provider);
         }
 
         protected async Task StartMonthEnd(Provider provider)
@@ -846,7 +847,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
 
             expectedPayments = SetProviderPaymentAccountIds(ilr, expectedPayments);
             var matcher = new ProviderPaymentEventMatcher(provider, CurrentCollectionPeriod, TestSession, expectedPayments);
-            await WaitForIt(() => matcher.MatchPayments(), "Provider Payment event check failure");
+            await WaitForIt(() => matcher.MatchPayments(), "Provider Payment event check failure", provider);
         }
 
         private IEnumerable<string> PeriodisedValuesForBalancingAndCompletion()
@@ -975,7 +976,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                 providerLearners);
 
             var matcher = new ProviderPaymentModelMatcher(provider, DataContext, TestSession, CurrentCollectionPeriod, expectedPayments, contractType);
-            await WaitForIt(() => matcher.MatchPayments(), "Recorded payments check failed");
+            await WaitForIt(() => matcher.MatchPayments(), "Recorded payments check failed", provider);
         }
 
         private ContractType GetContractType(List<ProviderPayment> expectedPayments, CollectionPeriod currentCollectionPeriod, List<Training> providerCurrentIlr, List<Learner> providerLearners)
@@ -1085,7 +1086,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
 
             var matcher = new EarningEventMatcher(provider, CurrentPriceEpisodes, providerCurrentIlrs, earnings,
                 TestSession, CurrentCollectionPeriod, learners);
-            await WaitForIt(() => matcher.MatchPayments(), "Earning event check failure");
+            await WaitForIt(() => matcher.MatchPayments(), "Earning event check failure", provider);
         }
 
         protected async Task HandleIlrReSubmissionForTheLearners(string collectionPeriodText, Provider provider)
@@ -1224,15 +1225,17 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             }
         }
 
-        protected void AddAppEarnHistoryToLearner(AdditionalIlrData additionalIlrData)
+        protected void AddAppEarnHistoryToLearner(AppEarnHistoryData appEarnHistoryData)
         {
             if (TestSession.AtLeastOneScenarioCompleted)
             {
                 return;
             }
 
-            var history = new LearnerEarningsHistory(additionalIlrData, PreviousEarnings);
-            TestSession.Learners.Single(l => l.Ukprn == TestSession.Provider.Ukprn).EarningsHistory = history;
+            var provider = TestSession.GetProviderByIdentifier(appEarnHistoryData.Provider);
+
+            var history = new LearnerEarningsHistory(appEarnHistoryData, PreviousEarnings);
+            TestSession.Learners.Single(l => l.Ukprn == provider.Ukprn).EarningsHistory = history;
         }
     }
 }

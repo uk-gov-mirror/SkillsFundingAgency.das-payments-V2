@@ -41,10 +41,17 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             var provider = TestSession.GetProviderByIdentifier(providerIdentifier);
 
             var newIlrSubmission = table.CreateSet<Training>().ToList();
-            AddTestLearners(newIlrSubmission, provider.Ukprn);
+
+            foreach (var ilr in newIlrSubmission)
+            {
+                var learner = TestSession.GenerateLearner(provider.Ukprn);
+                learner.UpdateFromTrainingType(ilr,
+                    PreviousIlr?.SingleOrDefault(pilr => pilr.Ukprn == ilr.Ukprn && pilr.LearnerId == ilr.LearnerId));
+
+                TestSession.Learners.Add(learner);
+            }
 
             if (PreviousIlr == null) PreviousIlr = new List<Training>();
-
             PreviousIlr.AddRange(newIlrSubmission);
         }
 
@@ -116,7 +123,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         [Given("appEarnHistory is required as follows")]
         public void AppEarnHistoryIsRequired(Table table)
         {
-            AddAppEarnHistoryToLearner(table.CreateSet<AdditionalIlrData>().SingleOrDefault());
+            AddAppEarnHistoryToLearner(table.CreateSet<AppEarnHistoryData>().SingleOrDefault());
         }
 
         [When(@"the amended ILR file is re-submitted for the learners in collection period (.*)")]
@@ -132,7 +139,14 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         public async Task WhenIlrFileIsSubmittedForTheLearnersInCollectionPeriod(string collectionPeriodText, string providerIdentifier)
         {
             var provider = TestSession.GetProviderByIdentifier(providerIdentifier);
-            await HandleIlrReSubmissionForTheLearners(collectionPeriodText, provider).ConfigureAwait(false);
+            Task ClearCache() => HandleIlrReSubmissionForTheLearners(collectionPeriodText, provider);
+            await Scope.Resolve<IIlrService>().PublishLearnerRequest(
+                    PreviousIlr.Where(ilr => ilr.Ukprn == provider.Ukprn).ToList(), 
+                    CurrentIlr.Where(ilr=>ilr.Ukprn == provider.Ukprn).ToList(), 
+                    TestSession.Learners.Where(l=>l.Ukprn == provider.Ukprn).ToList(), 
+                    collectionPeriodText, 
+                    featureNumber.Extract(), 
+                    ClearCache);
         }
 
         [Then(@"only the following provider payments will be recorded")]

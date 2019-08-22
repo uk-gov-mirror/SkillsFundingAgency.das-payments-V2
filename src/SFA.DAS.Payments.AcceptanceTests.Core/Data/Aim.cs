@@ -86,6 +86,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.Core.Data
 
         public ContractType ContractType { get; set; }
 
+        public string Provider { get; set; }
+
         private static IEnumerable<string> MathsAndEnglishAimReferenceCodes =>
             new[]
             {

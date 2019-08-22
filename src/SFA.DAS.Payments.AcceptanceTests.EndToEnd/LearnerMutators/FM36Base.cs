@@ -116,7 +116,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
         {
             if (learner.EmploymentStatusMonitoring == null || learner.EmploymentStatusMonitoring.Count == 0)
             {
-                if (learner.Restart && learner.Aims.Exists(a => !string.IsNullOrWhiteSpace(a.OriginalStartDate)))
+                // hope to remove the learner.Restart and leave it against only the aim.
+                if ((learner.Restart || learner.Aims.Any(aim=>aim.Restart)) && learner.Aims.Exists(a => !string.IsNullOrWhiteSpace(a.OriginalStartDate)))
                 {
                     messageLearner.LearnerEmploymentStatus[0].DateEmpStatApp =
                         learner.Aims.First(x => x.IsMainAim).OriginalStartDate.ToDate().AddMonths(-2);
@@ -249,9 +250,6 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
                     learnerLearningDeliveries.Last(ld => ld.LearnAimRef == ProgrammeAim));
             }
         }
-
-
-       
 
         private void MutateMainAimForLearner(IEnumerable<Aim> mainAims,
             List<MessageLearnerLearningDelivery> learningDeliveries)
@@ -461,7 +459,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
             learningDeliveryFams.Add(new MessageLearnerLearningDeliveryLearningDeliveryFAM()
             {
                 LearnDelFAMType = LearnDelFAMType.LSF.ToString(),
-                LearnDelFAMCode = aim.LearningSupportCode.Value.ToString(),
+                LearnDelFAMCode = aim.LearningSupportCode?.ToString(),
                 LearnDelFAMDateFrom = aim.LearningSupportDateFrom.ToDate(),
                 LearnDelFAMDateFromSpecified = true,
                 LearnDelFAMDateTo = aim.LearningSupportDateTo.ToDate(),
@@ -764,7 +762,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.LearnerMutators
 
         private long CalculateEmployerContribution(string sfaContributionPercentage, decimal totalTrainingPrice)
         {
-            var percentage = decimal.Parse(sfaContributionPercentage.AsPercentage().Value.ToString());
+            var percentage = decimal.Parse(sfaContributionPercentage.AsPercentage()?.ToString() ?? throw new ArgumentNullException(nameof(sfaContributionPercentage)));
             var employerContribution = totalTrainingPrice * (percentage / 100);
 
             return decimal.ToInt64(employerContribution);

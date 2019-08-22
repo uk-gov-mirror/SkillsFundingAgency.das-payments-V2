@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using System.Globalization;
+using System.Linq;
 
 namespace SFA.DAS.Payments.Tests.Core
 {
@@ -134,6 +135,12 @@ namespace SFA.DAS.Payments.Tests.Core
 
         public static string ToAcademicYear(this string yearName)
         {
+            // if yearName follows "xxx/Current Academic Year" format, remove the xxx/ part.
+            if (yearName.Split('/').Length > 1)
+            {
+                yearName = yearName.Split('/')[yearName.Split('/').Length - 1];
+            }
+
             int year;
             switch (yearName)
             {

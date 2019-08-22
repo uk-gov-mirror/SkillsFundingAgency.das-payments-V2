@@ -116,7 +116,21 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         [Given(@"aims details are changed as follows")]
         public void GivenAimsDetailsAreChangedAsFollows(Table table)
         {
-            AddTestAims(table.CreateSet<Aim>().ToList(), TestSession.Provider.Ukprn);
+            var aims = table.CreateSet<Aim>();
+
+            if (aims.Any(aim => !string.IsNullOrWhiteSpace(aim.Provider)))
+            {
+                var providerAimsGroups = aims.GroupBy(aim => aim.Provider);
+                foreach (var providerAimsGroup in providerAimsGroups)
+                {
+                    var provider = TestSession.GetProviderByIdentifier(providerAimsGroup.Key);
+                    AddTestAims(providerAimsGroup.ToList(), provider.Ukprn);
+                }
+            }
+            else
+            {
+                AddTestAims(table.CreateSet<Aim>().ToList(), TestSession.Provider.Ukprn);
+            }
         }
 
         [Given(@"the following aims")]
@@ -195,27 +209,36 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             var newPriceEpisodes = table.CreateSet<Price>().ToList();
             CurrentPriceEpisodes = newPriceEpisodes;
 
-            if (TestSession.Learners.Any(x => x.Aims.Count > 0))
+            // provider provided in the table
+            if (newPriceEpisodes.Any(pe => !string.IsNullOrWhiteSpace(pe.Provider)))
             {
-                foreach (var newPriceEpisode in newPriceEpisodes)
+                var priceEpisodeGroups = newPriceEpisodes.GroupBy(pe => pe.Provider);
+                foreach (var priceEpisodeGroup in priceEpisodeGroups)
                 {
-                    Aim aim;
-                    try
+                    var provider = TestSession.GetProviderByIdentifier(priceEpisodeGroup.Key);
+
+                    foreach (var priceEpisode in priceEpisodeGroup)
                     {
-                        aim = TestSession.Learners.SelectMany(x => x.Aims)
+                        // TODO: Refactor when we have the learner ID as part of the PriceEpisode SpecFlow table. Retrieve the learner properly.
+
+                        var aim = TestSession.Learners.Where(learner=>learner.Ukprn == provider.Ukprn && learner.LearnerIdentifier == priceEpisode.LearnerId).
+                            SelectMany(x=>x.Aims).SingleOrDefault(x => x.AimSequenceNumber == priceEpisode.AimSequenceNumber);
+                        aim.PriceEpisodes.Add(priceEpisode);
+                    }
+                }
+            }
+            else
+            {
+                // no provider provided
+                if (TestSession.Learners.Any(x => x.Aims.Count > 0))
+                {
+                    foreach (var newPriceEpisode in newPriceEpisodes)
+                    {
+                        var aim = TestSession.Learners.SelectMany(x => x.Aims)
                             .SingleOrDefault(x => x.AimSequenceNumber == newPriceEpisode.AimSequenceNumber);
-                    }
-                    catch (Exception)
-                    {
-                        throw new Exception("There are too many aims with the same sequence number");
-                    }
 
-                    if (aim == null)
-                    {
-                        throw new Exception("There is a price episode without a matching aim");
+                        aim.PriceEpisodes.Add(newPriceEpisode);
                     }
-
-                    aim.PriceEpisodes.Add(newPriceEpisode);
                 }
             }
         }
