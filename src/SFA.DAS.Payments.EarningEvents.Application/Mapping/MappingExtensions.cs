@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using ESFA.DC.ILR.FundingService.FM36.FundingOutput.Model.Abstract;
 using ESFA.DC.ILR.FundingService.FM36.FundingOutput.Model.Output;
@@ -44,9 +43,21 @@ namespace SFA.DAS.Payments.EarningEvents.Application.Mapping
             for (byte i = 1; i <= earningPeriods; i++)
             {
                 var periodValues = periodisedTextValues.Select(p => p.GetPeriodTextValue(i)).ToArray();
-                var periodValue = GetContractType(periodValues[0]);
-
-                contractTypes[i - 1] = periodValue;
+                if (periodValues.All(p => p == "None"))
+                {
+                    if (i == 1)
+                    {
+                        contractTypes[i - 1] = GetContractType(periodValues[0]);
+                    }
+                    else
+                    {
+                        contractTypes[i - 1] = contractTypes[i - 2];
+                    }
+                }
+                else
+                {
+                    contractTypes[i - 1] = GetContractType(periodValues[0]);
+                }
             }
 
             return contractTypes;
