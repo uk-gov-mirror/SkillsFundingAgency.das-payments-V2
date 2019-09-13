@@ -424,9 +424,26 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                     .WithDate(priceEpisode.EpisodeEffectiveStartDate)
                     .Build();
 
-                var firstEarningForPriceEpisode = earnings
-                    .OrderBy(x => x.DeliveryCalendarPeriod)
-                    .First(e => e.DeliveryCalendarPeriod >= priceEpisodeStartDateAsDeliveryPeriod);
+                var earningsForPriceEpisode = earnings
+                    .Where(x => x.PriceEpisodeIdentifier?.Equals(priceEpisode.PriceEpisodeId) ?? false ||
+                                x.AimSequenceNumber == priceEpisode.AimSequenceNumber)
+                    .ToList();
+
+                Earning firstEarningForPriceEpisode;
+                if (earningsForPriceEpisode.Any())
+                {
+                    firstEarningForPriceEpisode = earningsForPriceEpisode
+                        .OrderBy(x => x.DeliveryCalendarPeriod)
+                        .First(e => e.DeliveryCalendarPeriod >= priceEpisodeStartDateAsDeliveryPeriod);
+                }
+                else
+                {
+                    firstEarningForPriceEpisode = earnings
+                        .OrderBy(x => x.DeliveryCalendarPeriod)
+                        .First(e => e.DeliveryCalendarPeriod >= priceEpisodeStartDateAsDeliveryPeriod);
+                }
+
+                 
 
                 var sfaContributionPercent = (firstEarningForPriceEpisode.SfaContributionPercentage ??
                                   priceEpisode.SfaContributionPercentage).ToPercent();
@@ -517,26 +534,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
 
                             var earningPriceEpisodeIdentifier = earnings[earningRow].PriceEpisodeIdentifier;
                             var currentPriceEpisodeIdentifier = currentPriceEpisode.PriceEpisodeIdentifier;
-                            if (!string.IsNullOrWhiteSpace(earningPriceEpisodeIdentifier) &&
-                                earningPriceEpisodeIdentifier ==
-                                currentPriceEpisodeIdentifier)
-                            {
-                                newValues.SetValue(p, amount);
-                            }
-                            else
-                            {
-                                if (earningRow < earnings.Count &&
-                                    !string.IsNullOrWhiteSpace(earningPriceEpisodeIdentifier))
-                                {
-                                    if (earningPriceEpisodeIdentifier !=
-                                        currentPriceEpisodeIdentifier)
-                                    {
-                                        amount = decimal.Zero;
-                                    }
-                                }
-
-                                newValues.SetValue(p, amount);
-                            }
+                            newValues.SetValue(p, amount);
                         }
                     }
                     else // put everything as is for previous years
