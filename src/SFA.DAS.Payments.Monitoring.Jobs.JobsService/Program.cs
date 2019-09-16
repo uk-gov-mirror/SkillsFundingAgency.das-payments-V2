@@ -15,7 +15,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobsService
         {
             try
             {
-                using (ServiceFabricContainerFactory.CreateContainerForActor<JobsService>(3600,60))
+                using (ServiceFabricContainerFactory.CreateContainerForActor<JobsService>())
                 {
                     Thread.Sleep(Timeout.Infinite);
                 }

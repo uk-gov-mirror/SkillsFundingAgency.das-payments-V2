@@ -12,7 +12,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core.Infrastructure.Ioc
 {
     public static class ServiceFabricContainerFactory
     {
-        public static IContainer CreateContainerForActor<TActor>(int idleTimeInSeconds = 300,int scanIntervalInSeconds = 30) where TActor : Actor
+        public static IContainer CreateContainerForActor<TActor>(int idleTimeInSeconds = 5,int scanIntervalInSeconds = 5) where TActor : Actor
         {
 
             var builder = ContainerFactory.CreateBuilder();
