@@ -1,4 +1,4 @@
-@ignore the spec needs updating to new format where we can supply both aims
+#@ignore the spec needs updating to new format where we can supply both aims
 Feature: 5% Contribution from April 2019 - PV2-902
 	As a provider,
 	I want a Non Levy learner, starting prior to Apr 2019, where learner completes learning and starts a new course on new Pathway code in Apr 2019 on 10% contribution

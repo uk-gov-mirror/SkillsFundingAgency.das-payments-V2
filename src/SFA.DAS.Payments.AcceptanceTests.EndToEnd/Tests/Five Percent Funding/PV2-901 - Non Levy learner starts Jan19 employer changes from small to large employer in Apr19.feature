@@ -1,4 +1,4 @@
-@ignore
+#@ignore
 #Feature: 5% Contribution from April 2019
 #
 #Scenario: Non Levy Learner, started learning before Apr19, Employer changes from Small Employer to Large Employer in Apr19, remains on 10% contribution
