@@ -42,9 +42,9 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobsProxyService.Handlers
 
         protected virtual long GetHashJobId(long jobId)
         {
-            var guidBytes = Encoding.UTF8.GetBytes(jobId.ToString());
+            var jobIdBytes = Encoding.UTF8.GetBytes(jobId.ToString());
             var hasher = new SHA1CryptoServiceProvider();
-            var hashedBytes = hasher.ComputeHash(guidBytes);
+            var hashedBytes = hasher.ComputeHash(jobIdBytes);
             return BitConverter.ToInt64(hashedBytes, 0);
         }
 
