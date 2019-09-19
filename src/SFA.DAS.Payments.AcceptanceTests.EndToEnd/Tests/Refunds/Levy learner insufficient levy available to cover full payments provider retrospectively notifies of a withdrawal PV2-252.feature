@@ -1,4 +1,3 @@
-#@ignore
 # Fails to generate levy refund as the earning for periods 4 and 5 are 0 and so the DataLock component adds the earning event period onto the PayableEarningEvent without assigning the correct AccountId
 Feature: Levy learner, insufficient levy available to cover full payments, provider retrospectively notifies a withdrawal and previously paid monthly instalments need to be refunded PV2-252
 	As a provider,

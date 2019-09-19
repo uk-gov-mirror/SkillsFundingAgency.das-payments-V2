@@ -7,6 +7,7 @@ using SFA.DAS.Payments.Model.Core.Entities;
 using SFA.DAS.Payments.Tests.Core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Helpers
@@ -27,7 +28,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Helpers
 
             apprenticeship.Status = status;
             apprenticeship.ApprenticeshipPriceEpisodes.ForEach(priceEpisode => priceEpisode.Removed = true);
-            apprenticeship.ApprenticeshipPriceEpisodes.AddRange(priceEpisodes);
+            apprenticeship.ApprenticeshipPriceEpisodes.AddRange(priceEpisodes.Where
+                            (pe =>!apprenticeship.ApprenticeshipPriceEpisodes.Any
+                            (ape => ape.StartDate == pe.StartDate && ape.Cost == pe.Cost)));
             await dataContext.SaveChangesAsync().ConfigureAwait(false);
         }
 
