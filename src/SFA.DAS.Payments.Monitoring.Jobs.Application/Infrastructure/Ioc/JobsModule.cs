@@ -22,7 +22,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Ioc
                     return new JobsDataContext(configHelper.GetConnectionString("PaymentsConnectionString"));
                 })
                 .As<IJobsDataContext>()
-                .InstancePerLifetimeScope();
+                .InstancePerDependency();
+
             builder.Register((c, p) =>
             {
                 var configHelper = c.Resolve<IConfigurationHelper>();
@@ -68,7 +69,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Ioc
 
             builder.RegisterType<JobStorageService>()
                 .As<IJobStorageService>()
-                .SingleInstance();
+                .InstancePerLifetimeScope();
 
             builder.RegisterType<Services.JobService>()
                 .AsImplementedInterfaces()
