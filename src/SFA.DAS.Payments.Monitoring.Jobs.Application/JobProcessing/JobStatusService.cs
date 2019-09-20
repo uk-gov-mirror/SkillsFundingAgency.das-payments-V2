@@ -80,17 +80,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
         }
 
 
-        private async Task<List<CompletedMessage>> GetCompletedMessages(long jobId, List<InProgressMessage> inProgressMessages, CancellationToken cancellationToken)
-        {
-            var completedMessages = await jobStorageService.GetCompletedMessages(jobId, cancellationToken)
-                .ConfigureAwait(false);
-
-            var completedItems = completedMessages
-                .Where(completedMessage => inProgressMessages.Any(inProgress => inProgress.MessageId == completedMessage.MessageId)).ToList();
-
-            return completedItems;
-        }
-
         private async Task<(bool hasFailedMessages, DateTimeOffset? endTime)> UpdateJobStatus(long jobId, List<CompletedMessage> completedItems,
             CancellationToken cancellationToken)
         {

@@ -9,7 +9,7 @@ using SFA.DAS.Payments.AcceptanceTests.Services.BespokeHttpClient;
 using SFA.DAS.Payments.AcceptanceTests.Services.Intefaces;
 using JobStatusDto = ESFA.DC.Jobs.Model.JobStatusDto;
 
-namespace SFA.DAS.Payments.AcceptanceTests.Services
+namespace SFA.DAS.Payments.AcceptanceTests.Services.Services
 {
     public class JobService : IJobService
     {

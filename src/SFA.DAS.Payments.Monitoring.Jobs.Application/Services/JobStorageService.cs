@@ -4,10 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Internal;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Monitoring.Jobs.Application;
-using SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Data;
 using SFA.DAS.Payments.Monitoring.Jobs.Model;
 using SFA.DAS.Payments.ServiceFabric.Core;
@@ -19,7 +17,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
     {
         private readonly IJobsDataContext dataContext;
         private readonly IPaymentLogger logger;
-        private readonly IJobStatusManager jobStatusManager;
 
         public const string JobCacheKey = "jobs";
         public const string JobStatusCacheKey = "job_status";
@@ -32,25 +29,22 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, InProgressMessage>> InProgressMessageCache =
             new ConcurrentDictionary<string, ConcurrentDictionary<Guid, InProgressMessage>>();
 
-        private static readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, CompletedMessage>> CompletedMessageCache =
-            new ConcurrentDictionary<string, ConcurrentDictionary<Guid, CompletedMessage>>();
-
         private static readonly ConcurrentDictionary<long, (bool hasFailedMessages, DateTimeOffset? endTime)> JobStatusCache =
             new ConcurrentDictionary<long, (bool hasFailedMessages, DateTimeOffset? endTime)>();
 
         private static readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, InProgressMessage>> DatalockMessageCache =
             new ConcurrentDictionary<string, ConcurrentDictionary<Guid, InProgressMessage>>();
 
+        private static readonly ConcurrentDictionary<long, bool> JobErrorCache = new ConcurrentDictionary<long, bool>();
+
 
         public JobStorageService(IReliableStateManagerProvider stateManagerProvider,
             IReliableStateManagerTransactionProvider reliableTransactionProvider,
             IJobsDataContext dataContext, 
-            IPaymentLogger logger, 
-            IJobStatusManager jobStatusManager)
+            IPaymentLogger logger)
         {
             this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.jobStatusManager = jobStatusManager;
         }
         private static string GetCacheKey(string cacheKeyPrefix, long jobId) => $"{cacheKeyPrefix}_{jobId}";
 
@@ -170,39 +164,11 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
 
             foreach (var inProgressMessage in inProgressMessages)
             {
-                inProgressMessagesCollection.TryAdd(inProgressMessage.MessageId, inProgressMessage);
+                inProgressMessagesCollection.AddOrUpdate(inProgressMessage.MessageId, inProgressMessage, (x, y) => inProgressMessage);
                 if (IsDatalockMessage(inProgressMessage.MessageName))
                 {
-                    datalockMessageCollection.TryAdd(inProgressMessage.MessageId, inProgressMessage);
+                    datalockMessageCollection.AddOrUpdate(inProgressMessage.MessageId, inProgressMessage, (x, y) => inProgressMessage);
                 }
-            }
-        }
-
-        private async Task<ConcurrentDictionary<Guid, CompletedMessage>> GetCompletedMessagesCollection(long jobId)
-        {
-            var key = $"{CompletedMessagesCacheKey}_{jobId}";
-
-            if (CompletedMessageCache.TryGetValue(key, out var value))
-            {
-                return value;
-            }
-            var newValue = new ConcurrentDictionary<Guid, CompletedMessage>();
-            CompletedMessageCache.TryAdd(key, newValue);
-            return newValue;
-        }
-
-        public async Task<List<CompletedMessage>> GetCompletedMessages(long jobId, CancellationToken cancellationToken)
-        {
-            var completedMessageCollection = await GetCompletedMessagesCollection(jobId).ConfigureAwait(false);
-            return completedMessageCollection.Values.ToList();
-        }
-
-        public async Task RemoveCompletedMessages(long jobId, List<Guid> completedMessages, CancellationToken cancellationToken)
-        {
-            var completedMessagesCollection = await GetCompletedMessagesCollection(jobId).ConfigureAwait(false);
-            foreach (var completedMessage in completedMessages)
-            {
-                completedMessagesCollection.TryRemove(completedMessage, out _);
             }
         }
 
@@ -211,12 +177,24 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             var inProgressMessages = await GetInProgressMessagesCollection(completedMessage.JobId);
             var datalockMessages = GetDatalockCollection(completedMessage.JobId);
 
+            if (!completedMessage.Succeeded)
+            {
+                JobErrorCache.AddOrUpdate(completedMessage.JobId, true, (l, b) => true);
+            }
+
             inProgressMessages.TryRemove(completedMessage.MessageId, out _);
             
             if (inProgressMessages.Count == 0)
             {
-                await SaveJobStatus(completedMessage.JobId, JobStatus.Completed, completedMessage.CompletedTime,
-                    default);
+                var status = JobStatus.Completed;
+                if (JobErrorCache.TryGetValue(completedMessage.JobId, out var failed))
+                {
+                    if (failed)
+                    {
+                        status = JobStatus.CompletedWithErrors;
+                    }
+                }
+                await SaveJobStatus(completedMessage.JobId, status, completedMessage.CompletedTime, default);
             }
 
             if (datalockMessages.TryRemove(completedMessage.MessageId, out var value))
@@ -226,6 +204,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
                     await SaveDataLocksCompletionTime(completedMessage.JobId, completedMessage.CompletedTime, default);
                 }
             }
+
+            
             
 
             //cancellationToken.ThrowIfCancellationRequested();

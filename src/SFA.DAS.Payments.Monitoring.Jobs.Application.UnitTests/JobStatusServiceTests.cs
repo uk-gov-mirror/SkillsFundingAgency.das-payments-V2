@@ -50,9 +50,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.UnitTests
                 .Setup(x => x.GetInProgressMessages(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(inProgressMessages);
             mocker.Mock<IJobStorageService>()
-                .Setup(x => x.GetCompletedMessages(It.IsAny<long>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(completedMessages);
-            mocker.Mock<IJobStorageService>()
                 .Setup(x => x.GetJobStatus(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((hasFailedMessages: false, endTime: null));
         }
@@ -70,9 +67,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.UnitTests
             status.Should().Be(JobStatus.Completed);
             mocker.Mock<IJobStorageService>()
                 .Verify(svc => svc.RemoveInProgressMessages(It.Is<long>(id => id == jobId),
-                    It.Is<List<Guid>>(identifiers => identifiers.Count == 1 && identifiers.Contains(completedMessageId)), It.IsAny<CancellationToken>()), Times.Once);
-            mocker.Mock<IJobStorageService>()
-                .Verify(svc => svc.RemoveCompletedMessages(It.Is<long>(id => id == jobId),
                     It.Is<List<Guid>>(identifiers => identifiers.Count == 1 && identifiers.Contains(completedMessageId)), It.IsAny<CancellationToken>()), Times.Once);
         }
 

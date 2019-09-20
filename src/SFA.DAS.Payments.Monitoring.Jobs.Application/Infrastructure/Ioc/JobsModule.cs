@@ -68,6 +68,10 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Ioc
 
             builder.RegisterType<JobStorageService>()
                 .As<IJobStorageService>()
+                .SingleInstance();
+
+            builder.RegisterType<Services.JobService>()
+                .AsImplementedInterfaces()
                 .InstancePerLifetimeScope();
         }
     }

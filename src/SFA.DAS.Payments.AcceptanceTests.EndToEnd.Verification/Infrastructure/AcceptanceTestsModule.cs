@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using Autofac;
 using ESFA.DC.Serialization.Interfaces;
 using ESFA.DC.Serialization.Json;
 using Polly;
 using Polly.Registry;
 using SFA.DAS.Payments.AcceptanceTests.Core.Data;
-using SFA.DAS.Payments.AcceptanceTests.Services;
 using SFA.DAS.Payments.AcceptanceTests.Services.BespokeHttpClient;
 using SFA.DAS.Payments.AcceptanceTests.Services.Intefaces;
+using SFA.DAS.Payments.AcceptanceTests.Services.Services;
 
 namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Verification.Infrastructure
 {
