@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using NServiceBus;
 using SFA.DAS.Payments.Monitoring.Jobs.JobService.Interfaces;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
@@ -11,7 +12,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobsProxyService.Handlers
 
         public async Task Handle(RecordEarningsJobAdditionalMessages message, IMessageHandlerContext context)
         {
-            await JobService.RecordEarningsJobAdditionalMessages(message, default);
+            await JobService.RecordEarningsJobAdditionalMessages(message, default(CancellationToken));
         }
     }
 }
