@@ -194,14 +194,14 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
                         status = JobStatus.CompletedWithErrors;
                     }
                 }
-                await SaveJobStatus(completedMessage.JobId, status, completedMessage.CompletedTime, default);
+                await SaveJobStatus(completedMessage.JobId, status, completedMessage.CompletedTime, default(CancellationToken));
             }
 
             if (datalockMessages.TryRemove(completedMessage.MessageId, out var value))
             {
                 if (value != null && datalockMessages.Count == 0)
                 {
-                    await SaveDataLocksCompletionTime(completedMessage.JobId, completedMessage.CompletedTime, default);
+                    await SaveDataLocksCompletionTime(completedMessage.JobId, completedMessage.CompletedTime, default(CancellationToken));
                 }
             }
 
