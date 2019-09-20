@@ -14,6 +14,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
     {
         Task Start(CancellationToken cancellationToken);
         void StartMonitoringJob(long jobId, JobType jobType);
+        Task CheckJobStatus(long jobId);
     }
 
     public class JobStatusManager : IJobStatusManager
@@ -53,7 +54,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
             }
         }
 
-        private async Task CheckJobStatus(long jobId)
+        public async Task CheckJobStatus(long jobId)
         {
             try
             {

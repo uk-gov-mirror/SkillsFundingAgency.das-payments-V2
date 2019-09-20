@@ -1,25 +1,17 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.ServiceFabric.Actors.Client;
-using Microsoft.ServiceFabric.Services.Remoting.Client;
+﻿using System.Threading.Tasks;
 using NServiceBus;
-using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Monitoring.Jobs.JobService.Interfaces;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
 
 namespace SFA.DAS.Payments.Monitoring.Jobs.JobsProxyService.Handlers
 {
-    public class RecordJobMessageProcessingStatusHandler : BaseJobMessageHandler<RecordJobMessageProcessingStatus>
+    public class RecordJobMessageProcessingStatusHandler : IHandleMessages<RecordJobMessageProcessingStatus>
     {
-        public RecordJobMessageProcessingStatusHandler(IServiceProxyFactory proxyFactory,
-            IPaymentLogger logger) : base(proxyFactory, logger)
-        {
-        }
+        public IJobService JobService { get; set; }
 
-        protected override async Task HandleMessage(RecordJobMessageProcessingStatus message, IMessageHandlerContext context, IJobService jobService, CancellationToken cancellationToken)
+        public async Task Handle(RecordJobMessageProcessingStatus message, IMessageHandlerContext context)
         {
-            await jobService.RecordJobMessageProcessingStatus(message, cancellationToken)
-                .ConfigureAwait(false);
+            await JobService.RecordJobMessageProcessingStatus(message, default);
         }
     }
 }

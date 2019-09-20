@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
-using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
 using SFA.DAS.Payments.Monitoring.Jobs.Model;
 
@@ -19,18 +18,15 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application
     {
         private readonly IJobStorageService jobStorageService;
         private readonly IPaymentLogger logger;
-        private readonly ITelemetry telemetry;
 
-        public JobMessageService(IJobStorageService jobStorageService, IPaymentLogger logger, ITelemetry telemetry)
+        public JobMessageService(IJobStorageService jobStorageService, IPaymentLogger logger)
         {
             this.jobStorageService = jobStorageService ?? throw new ArgumentNullException(nameof(jobStorageService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
         }
 
         public async Task RecordCompletedJobMessageStatus(RecordJobMessageProcessingStatus jobMessageStatus, CancellationToken cancellationToken)
         {
-
             var completedMessage = new CompletedMessage
             {
                 MessageId = jobMessageStatus.Id, JobId = jobMessageStatus.JobId,

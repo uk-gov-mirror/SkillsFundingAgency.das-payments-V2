@@ -37,33 +37,29 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
                 return job.Status;
             }
 
-            var inProgressMessages = await jobStorageService.GetInProgressMessages(jobId, cancellationToken)
-                .ConfigureAwait(false);
-            var completedItems = await GetCompletedMessages(jobId, inProgressMessages, cancellationToken).ConfigureAwait(false);
-            if (!completedItems.Any())
-            {
-                logger.LogVerbose($"Found no completed messages for job: {jobId}");
-                return JobStatus.InProgress;
-            }
+            //var inProgressMessages = await jobStorageService.GetInProgressMessages(jobId, cancellationToken)
+            //    .ConfigureAwait(false);
+            //var completedItems = await GetCompletedMessages(jobId, inProgressMessages, cancellationToken).ConfigureAwait(false);
+            
 
             await CompleteDataLocks(jobId, completedItems, inProgressMessages, cancellationToken)
                 .ConfigureAwait(false);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await jobStorageService.RemoveInProgressMessages(jobId, completedItems.Select(item => item.MessageId).ToList(), cancellationToken)
-                .ConfigureAwait(false);
-            await jobStorageService.RemoveCompletedMessages(jobId, completedItems.Select(item => item.MessageId).ToList(), cancellationToken)
-                .ConfigureAwait(false);
+            //await jobStorageService.RemoveInProgressMessages(jobId, completedItems.Select(item => item.MessageId).ToList(), cancellationToken)
+            //    .ConfigureAwait(false);
+            //await jobStorageService.RemoveCompletedMessages(jobId, completedItems.Select(item => item.MessageId).ToList(), cancellationToken)
+            //    .ConfigureAwait(false);
 
             var currentJobStatus =
                 await UpdateJobStatus(jobId, completedItems, cancellationToken).ConfigureAwait(false);
 
-            if (!inProgressMessages.TrueForAll(inProgress => completedItems.Any(item => item.MessageId == inProgress.MessageId)))
-            {
-                logger.LogDebug($"Found in progress messages for job id: {jobId}.  Cannot set status for job.");
-                return JobStatus.InProgress;
-            }
+            //if (!inProgressMessages.TrueForAll(inProgress => completedItems.Any(item => item.MessageId == inProgress.MessageId)))
+            //{
+            //    logger.LogDebug($"Found in progress messages for job id: {jobId}.  Cannot set status for job.");
+            //    return JobStatus.InProgress;
+            //}
 
             job = await jobStorageService.GetJob(jobId, cancellationToken);
             if (job == null)
@@ -192,8 +188,5 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
                 metrics.Add("Learner Count", job.LearnerCount ?? 0);
             telemetry.TrackEvent("Finished Job", properties, metrics);
         }
-
-
-
     }
 }
