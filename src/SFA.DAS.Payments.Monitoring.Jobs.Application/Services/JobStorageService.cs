@@ -121,7 +121,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             return newValue;
         }
 
-        private async ConcurrentDictionary<Guid, InProgressMessage> GetDatalockCollection(long jobId)
+        private ConcurrentDictionary<Guid, InProgressMessage> GetDatalockCollection(long jobId)
         {
             var key = $"{InProgressMessagesCacheKey}_{jobId}";
             if (DatalockMessageCache.TryGetValue(key, out var value))
@@ -215,7 +215,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             
             if (inProgressMessages.Count == 0)
             {
-                await jobStatusManager.CheckJobStatus(completedMessage.JobId);
+                await SaveJobStatus(completedMessage.JobId, JobStatus.Completed, completedMessage.CompletedTime,
+                    default);
             }
 
             if (datalockMessages.TryRemove(completedMessage.MessageId, out var value))

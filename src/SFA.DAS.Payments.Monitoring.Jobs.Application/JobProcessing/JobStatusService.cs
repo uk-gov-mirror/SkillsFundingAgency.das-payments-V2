@@ -42,18 +42,18 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
             //var completedItems = await GetCompletedMessages(jobId, inProgressMessages, cancellationToken).ConfigureAwait(false);
             
 
-            await CompleteDataLocks(jobId, completedItems, inProgressMessages, cancellationToken)
-                .ConfigureAwait(false);
+            //await CompleteDataLocks(jobId, completedItems, inProgressMessages, cancellationToken)
+            //    .ConfigureAwait(false);
 
-            cancellationToken.ThrowIfCancellationRequested();
+            //cancellationToken.ThrowIfCancellationRequested();
 
             //await jobStorageService.RemoveInProgressMessages(jobId, completedItems.Select(item => item.MessageId).ToList(), cancellationToken)
             //    .ConfigureAwait(false);
             //await jobStorageService.RemoveCompletedMessages(jobId, completedItems.Select(item => item.MessageId).ToList(), cancellationToken)
             //    .ConfigureAwait(false);
 
-            var currentJobStatus =
-                await UpdateJobStatus(jobId, completedItems, cancellationToken).ConfigureAwait(false);
+            //var currentJobStatus =
+            //    await UpdateJobStatus(jobId, completedItems, cancellationToken).ConfigureAwait(false);
 
             //if (!inProgressMessages.TrueForAll(inProgress => completedItems.Any(item => item.MessageId == inProgress.MessageId)))
             //{
@@ -68,11 +68,11 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing
                 return JobStatus.InProgress;
             }
 
-            job.Status = currentJobStatus.hasFailedMessages ? JobStatus.CompletedWithErrors : JobStatus.Completed;
-            job.EndTime = currentJobStatus.endTime;
-            await jobStorageService.SaveJobStatus(jobId,
-                currentJobStatus.hasFailedMessages ? JobStatus.CompletedWithErrors : JobStatus.Completed,
-                currentJobStatus.endTime.Value, cancellationToken).ConfigureAwait(false);
+            //job.Status = currentJobStatus.hasFailedMessages ? JobStatus.CompletedWithErrors : JobStatus.Completed;
+            //job.EndTime = currentJobStatus.endTime;
+            //await jobStorageService.SaveJobStatus(jobId,
+            //    currentJobStatus.hasFailedMessages ? JobStatus.CompletedWithErrors : JobStatus.Completed,
+            //    currentJobStatus.endTime.Value, cancellationToken).ConfigureAwait(false);
 
             SendTelemetry(job);
             logger.LogInfo($"Finished recording completion status of job. Job: {job.Id}, status: {job.Status}, end time: {job.EndTime}");
