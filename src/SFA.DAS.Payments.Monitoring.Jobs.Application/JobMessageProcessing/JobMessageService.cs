@@ -8,11 +8,14 @@ using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
 using SFA.DAS.Payments.Monitoring.Jobs.Model;
 
-namespace SFA.DAS.Payments.Monitoring.Jobs.Application
+namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobMessageProcessing
 {
     public interface IJobMessageService
     {
         Task RecordCompletedJobMessageStatus(RecordJobMessageProcessingStatus jobMessageStatus, CancellationToken cancellationToken);
+
+        Task RecordCompletedJobMessageStatus(List<RecordJobMessageProcessingStatus> jobMessageStatus,
+            CancellationToken cancellationToken);
     }
 
     public class JobMessageService : IJobMessageService
@@ -30,7 +33,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application
 
         public async Task RecordCompletedJobMessageStatus(RecordJobMessageProcessingStatus jobMessageStatus, CancellationToken cancellationToken)
         {
-
             var completedMessage = new CompletedMessage
             {
                 MessageId = jobMessageStatus.Id, JobId = jobMessageStatus.JobId,
@@ -47,6 +49,15 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application
                 }).ToList(), cancellationToken);
 
             logger.LogDebug($"Recorded completion of message processing.  Job Id: {jobMessageStatus.JobId}, Message id: {jobMessageStatus.Id}.");
+        }
+
+        public async Task RecordCompletedJobMessageStatus(List<RecordJobMessageProcessingStatus> jobMessageStatus, CancellationToken cancellationToken)
+        {
+            foreach (var recordJobMessageProcessingStatus in jobMessageStatus)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                await RecordCompletedJobMessageStatus(recordJobMessageProcessingStatus, cancellationToken);
+            }
         }
     }
 }

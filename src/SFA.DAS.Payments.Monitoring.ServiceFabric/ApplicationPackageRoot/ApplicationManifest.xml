@@ -22,7 +22,7 @@
     <Parameter Name="ConsoleLogLevel" DefaultValue="" />
     <Parameter Name="DelayedRetryTimeInSeconds" DefaultValue="5" />
     <Parameter Name="Placement_Constraints" DefaultValue="" />
-    <Parameter Name="JobStatusCheck_Interval" DefaultValue="00:00:10" />
+    <Parameter Name="JobStatusCheck_Interval" DefaultValue="00:01:00" />
     <Parameter Name="TimeToWaitForJobToComplete" DefaultValue="01:00:00" />
   </Parameters>
   <ServiceManifestImport>
@@ -46,45 +46,18 @@
             <Parameter Name="ConsoleLogLevel" Value="[ConsoleLogLevel]" />
             <Parameter Name="JobStatusCheck_Interval" Value="[JobStatusCheck_Interval]" />
             <Parameter Name="TimeToWaitForJobToComplete" Value="[TimeToWaitForJobToComplete]" />
-            <Parameter Name="NumberOfNServiceBusThreads" Value="4" />
+            <Parameter Name="NumberOfNServiceBusThreads" Value="[NumberOfNServiceBusThreads]" />
           </Section>
         </Settings>
       </ConfigOverride>
     </ConfigOverrides>
   </ServiceManifestImport>
-  <!--<ServiceManifestImport>
-    <ServiceManifestRef ServiceManifestName="SFA.DAS.Payments.Monitoring.Jobs.JobsProxyServicePkg" ServiceManifestVersion="1.0.0" />
-    <ConfigOverrides>
-      <ConfigOverride Name="Config">
-        <Settings>
-          <Section Name="ConnectionStringsSection">
-            <Parameter Name="StorageConnectionString" Value="[StorageConnectionString]" />
-            <Parameter Name="ServiceBusConnectionString" Value="[ServiceBusConnectionString]" />
-            <Parameter Name="LoggingConnectionString" Value="[LoggingConnectionString]" />
-            <Parameter Name="PaymentsConnectionString" Value="[PaymentsConnectionString]" />
-            <Parameter Name="PaymentsMonitoringConnectionString" Value="[PaymentsMonitoringConnectionString]" />
-          </Section>
-          <Section Name="Settings">
-            <Parameter Name="EndpointName" Value="[Monitoring_JobsService_EndpointName]" />
-            <Parameter Name="FailedMessagesQueue" Value="[Monitoring_JobsService_FailedMessagesQueue]" />
-            <Parameter Name="ApplicationInsightsInstrumentationKey" Value="[ApplicationInsightsInstrumentationKey]" />
-            <Parameter Name="DelayedRetryTimeInSeconds" Value="[DelayedRetryTimeInSeconds]" />
-            <Parameter Name="LogLevel" Value="[LogLevel]" />
-            <Parameter Name="ConsoleLogLevel" Value="[ConsoleLogLevel]" />
-            <Parameter Name="JobStatusCheck_Interval" Value="[JobStatusCheck_Interval]" />
-            <Parameter Name="TimeToWaitForJobToComplete" Value="[TimeToWaitForJobToComplete]" />
-          </Section>
-        </Settings>
-      </ConfigOverride>
-    </ConfigOverrides>
-  </ServiceManifestImport>-->
   <DefaultServices>
     <Service Name="SFA.DAS.Payments.Monitoring.Jobs.JobService" ServicePackageActivationMode="ExclusiveProcess">
       <StatefulService ServiceTypeName="SFA.DAS.Payments.Monitoring.Jobs.JobServiceType" TargetReplicaSetSize="[JobService_TargetReplicaSetSize]" MinReplicaSetSize="[JobService_MinReplicaSetSize]">
-        <!--<UniformInt64Partition PartitionCount="[JobService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />-->
         <NamedPartition>
           <Partition Name="0" />
-          <Partition Name="1" />
+          <!--<Partition Name="1" />
           <Partition Name="2" />
           <Partition Name="3" />
           <Partition Name="4" />
@@ -102,16 +75,10 @@
           <Partition Name="16" />
           <Partition Name="17" />
           <Partition Name="18" />
-          <Partition Name="19" />
+          <Partition Name="19" />-->
         </NamedPartition>
         <PlacementConstraints>[Placement_Constraints]</PlacementConstraints>
       </StatefulService>
     </Service>
-    <!--<Service Name="SFA.DAS.Payments.Monitoring.Jobs.JobsProxyService" ServicePackageActivationMode="ExclusiveProcess">
-      <StatelessService ServiceTypeName="SFA.DAS.Payments.Monitoring.Jobs.JobsProxyServiceType" InstanceCount="[JobsProxyService_InstanceCount]">
-        <SingletonPartition />
-        <PlacementConstraints>[Placement_Constraints]</PlacementConstraints>
-      </StatelessService>
-    </Service>-->
   </DefaultServices>
 </ApplicationManifest>

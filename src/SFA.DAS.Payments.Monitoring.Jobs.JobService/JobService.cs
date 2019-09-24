@@ -15,10 +15,12 @@ using SFA.DAS.Payments.Application.Infrastructure.UnitOfWork;
 using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Monitoring.Jobs.Application;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing;
+using SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure;
 using SFA.DAS.Payments.Monitoring.Jobs.JobService.Interfaces;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
 using SFA.DAS.Payments.Monitoring.Jobs.Model;
 using SFA.DAS.Payments.ServiceFabric.Core;
+using SFA.DAS.Payments.ServiceFabric.Core.Infrastructure.Ioc;
 
 namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
 {
@@ -29,7 +31,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
         private readonly IUnitOfWorkScopeFactory scopeFactory;
         private readonly IJobStatusManager jobStatusManager;
         private readonly ILifetimeScope lifetimeScope;
-        private IStatefulEndpointCommunicationListener listener;
+        //private IStatefulEndpointCommunicationListener listener;
 
         public JobService(StatefulServiceContext context, IPaymentLogger logger, IUnitOfWorkScopeFactory scopeFactory, IJobStatusManager jobStatusManager, ILifetimeScope lifetimeScope)
             : base(context)
@@ -48,12 +50,12 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
                 {
                     e.Name += ((NamedPartitionInformation)Partition.PartitionInfo).Name;
                 };
-                //EndpointConfigurationEvents.EndpointConfigured += EndpointConfigurationEvents_EndpointConfigured;
+                //var serviceListener = new ServiceReplicaListener(context =>
+//                    listener = lifetimeScope.Resolve<IStatefulEndpointCommunicationListener>());
 
-                var serviceListener = new ServiceReplicaListener(context =>
-                    listener = lifetimeScope.Resolve<IStatefulEndpointCommunicationListener>());
-
-
+                var batchListener = lifetimeScope.Resolve<IBatchedServiceBusCommunicationListener>();
+                batchListener.EndpointName += ((NamedPartitionInformation)Partition.PartitionInfo).Name;
+                var serviceListener = new ServiceReplicaListener(context => batchListener);
                 return new List<ServiceReplicaListener>
                 {
                     serviceListener,
@@ -67,16 +69,14 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             }
         }
 
-        private void EndpointConfigurationEvents_EndpointConfigured(object sender, EndpointConfiguration e)
-        {
-            e.LimitMessageProcessingConcurrencyTo(20);
-        }
-
         protected override Task RunAsync(CancellationToken cancellationToken)
         {
-            return Task.WhenAll(listener.RunAsync(), jobStatusManager.Start(cancellationToken));
+            var endpoint = lifetimeScope.Resolve<EndpointConfiguration>();
+            return Task.WhenAll(Endpoint.Create(endpoint), jobStatusManager.Start(cancellationToken));
+
+//            return Task.WhenAll(listener.RunAsync(), jobStatusManager.Start(cancellationToken));
         }
 
- 
+
     }
 }

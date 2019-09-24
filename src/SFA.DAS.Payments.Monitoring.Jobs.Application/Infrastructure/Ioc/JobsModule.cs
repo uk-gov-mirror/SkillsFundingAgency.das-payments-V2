@@ -7,6 +7,7 @@ using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Application.Repositories;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Configuration;
+using SFA.DAS.Payments.Monitoring.Jobs.Application.JobMessageProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Data;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
@@ -54,40 +55,17 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Ioc
                 .As<IJobStatusService>()
                 .InstancePerLifetimeScope();
 
-            builder.Register((c, p) => new MemoryCache(new MemoryCacheOptions()))
-                .As<IMemoryCache>()
-                .SingleInstance();
-            builder.RegisterType<SqlExceptionService>()
-                .As<ISqlExceptionService>()
-                .SingleInstance();
-
             builder.RegisterBuildCallback(c =>
             {
                 var config = c.Resolve<IApplicationConfiguration>();
                 EndpointConfigurationEvents.ConfiguringTransport += (object sender, TransportExtensions<AzureServiceBusTransport> e) =>
                 {
                     //e.Transactions(TransportTransactionMode.None);
-                    //e.PrefetchCount();
-                    e.Routing().RouteToEndpoint(typeof(RecordEarningsJob).Assembly, config.EndpointName);
+                    //e.PrefetchCount(250);
+                    //e.Routing().RouteToEndpoint(typeof(RecordEarningsJob).Assembly, config.EndpointName);
                 };
             });
 
-            //TODO: should not be in here
-            builder.RegisterType<ActorReliableCollectionCache<JobModel>>()
-                .As<IActorDataCache<JobModel>>()
-                .InstancePerLifetimeScope();
-            builder.RegisterType<ActorReliableCollectionCache<JobStepModel>>()
-                .As<IActorDataCache<JobStepModel>>()
-                //.AsImplementedInterfaces()
-                .InstancePerLifetimeScope();
-            builder.RegisterType<ActorReliableCollectionCache<List<Guid>>>()
-                .As<IActorDataCache<List<Guid>>>()
-                //.AsImplementedInterfaces()
-                .InstancePerLifetimeScope();
-            builder.RegisterType<ActorReliableCollectionCache<(JobStepStatus jobStatus, DateTimeOffset? endTime)>>()
-                .As<IActorDataCache<(JobStepStatus jobStatus, DateTimeOffset? endTime)>>()
-                //.AsImplementedInterfaces()
-                .InstancePerLifetimeScope();
         }
     }
 }

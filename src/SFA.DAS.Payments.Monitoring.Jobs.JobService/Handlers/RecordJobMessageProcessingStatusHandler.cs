@@ -6,6 +6,7 @@ using NServiceBus;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Application.Infrastructure.UnitOfWork;
 using SFA.DAS.Payments.Monitoring.Jobs.Application;
+using SFA.DAS.Payments.Monitoring.Jobs.Application.JobMessageProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
 
 namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Handlers
@@ -24,7 +25,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Handlers
 
         public async Task Handle(RecordJobMessageProcessingStatus message, IMessageHandlerContext context)
         {
-            using (var scope = scopeFactory.Create("JobService.RecordJobMessageProcessingStatus"))
+            using (var scope = scopeFactory.Create($"JobService.RecordJobMessageProcessingStatus:{message.JobId}"))
             {
                 try
                 {
