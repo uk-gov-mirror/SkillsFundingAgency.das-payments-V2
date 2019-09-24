@@ -33,8 +33,10 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
         public JobsCommand JobDetails
         {
             get => Get<JobsCommand>("job_command");
-            set => Set(value,"job_command");
+            set => Set(value, "job_command");
         }
+        //protected string PartitionedEndpointName => $"sfa-das-payments-monitoring-jobs{JobDetails.JobId % 20}";
+        protected string PartitionedEndpointName => $"sfa-das-payments-monitoring-jobs0";
 
         public JobsSteps(ScenarioContext context) : base(context)
         {
@@ -135,7 +137,7 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
             DataContext.Jobs.Add(Job);
             await DataContext.SaveChangesAsync();
             DataContext.JobSteps.AddRange(
-                GeneratedMessages.Select(msg => 
+                GeneratedMessages.Select(msg =>
                     new JobStepModel
                     {
                         JobId = Job.Id,
@@ -153,7 +155,7 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
             CreatePeriodEndJob<RecordPeriodEndStartJob>();
         }
 
-        private void CreatePeriodEndJob<T>() where T: RecordPeriodEndJob, new()
+        private void CreatePeriodEndJob<T>() where T : RecordPeriodEndJob, new()
         {
             GeneratedMessages = new List<GeneratedMessage>
             {
@@ -186,7 +188,6 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
         [When(@"the final messages for the job are successfully processed")]
         public async Task WhenTheFinalMessagesForTheJobAreSuccessfullyProcessed()
         {
-            var partitionedEndpointName = $"sfa-das-payments-monitoring-jobs{JobDetails.JobId % 20}";
             foreach (var generatedMessage in GeneratedMessages)
             {
                 var message = new RecordJobMessageProcessingStatus
@@ -198,22 +199,22 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
                     Id = generatedMessage.MessageId
                 };
                 Console.WriteLine($"Generated Message: {message.ToJson()}");
-                await MessageSession.Send(partitionedEndpointName,message).ConfigureAwait(false);
+                await MessageSession.Send(PartitionedEndpointName, message).ConfigureAwait(false);
             }
         }
+
 
         [When(@"the earnings event service notifies the job monitoring service to record the job")]
         public async Task WhenTheEarningsEventServiceNotifiesTheJobMonitoringServiceToRecordTheJob()
         {
-            var partitionedEndpointName = $"sfa-das-payments-monitoring-jobs{JobDetails.JobId % 20}";
             var recordEarningsJob = JobDetails as RecordEarningsJob;
             recordEarningsJob.GeneratedMessages = GeneratedMessages.Take(1000).ToList();
-            await MessageSession.Send(partitionedEndpointName,JobDetails).ConfigureAwait(false);
+            await MessageSession.Send(PartitionedEndpointName, JobDetails).ConfigureAwait(false);
             var skip = 1000;
             var batch = new List<GeneratedMessage>();
-            while ( (batch = GeneratedMessages.Skip(skip).Take(1000).ToList()).Count>0)
+            while ((batch = GeneratedMessages.Skip(skip).Take(1000).ToList()).Count > 0)
             {
-                await MessageSession.Send(partitionedEndpointName,new RecordEarningsJobAdditionalMessages
+                await MessageSession.Send(PartitionedEndpointName, new RecordEarningsJobAdditionalMessages
                 {
                     GeneratedMessages = batch,
                     JobId = JobDetails.JobId,
@@ -221,12 +222,6 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
                 }).ConfigureAwait(false);
                 skip += 1000;
             }
-            //if (GeneratedMessages.Count<1000)
-            //    await MessageSession.Send(JobDetails).ConfigureAwait(false);
-            //((RecordEarningsJob) JobDetails).GeneratedMessages = GeneratedMessages.Take(1000).ToList();
-            //await MessageSession.Send(JobDetails).ConfigureAwait(false);
-            //((RecordEarningsJob)JobDetails).GeneratedMessages = GeneratedMessages.Skip(1000).ToList();
-
         }
 
         [When(@"the final messages for the job are failed to be processed")]
@@ -234,7 +229,7 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Jobs
         {
             foreach (var generatedMessage in GeneratedMessages)
             {
-                await MessageSession.Send(new RecordJobMessageProcessingStatus
+                await MessageSession.Send(PartitionedEndpointName,new RecordJobMessageProcessingStatus
                 {
                     JobId = JobDetails.JobId,
                     MessageName = generatedMessage.MessageName,
