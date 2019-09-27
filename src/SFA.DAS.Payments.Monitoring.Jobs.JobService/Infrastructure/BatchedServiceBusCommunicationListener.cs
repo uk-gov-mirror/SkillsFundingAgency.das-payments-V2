@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,6 +17,7 @@ using Newtonsoft.Json;
 using NServiceBus;
 using SFA.DAS.Payments.Application.Infrastructure.Ioc;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
+using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.Application.Infrastructure.UnitOfWork;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.Monitoring.Jobs.Application;
@@ -35,6 +37,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
         private readonly IApplicationConfiguration config;
         private readonly IPaymentLogger logger;
         private readonly IContainerScopeFactory scopeFactory;
+        private readonly ITelemetry telemetry;
         private readonly string connectionString;
         public string EndpointName { get; set; }
         private readonly string errorQueueName;
@@ -42,11 +45,12 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
         private Task listenForMessagesThread;
 
         public BatchedServiceBusCommunicationListener(IApplicationConfiguration config, IPaymentLogger logger,
-            IContainerScopeFactory scopeFactory)
+            IContainerScopeFactory scopeFactory, ITelemetry telemetry)
         {
             this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
+            this.telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
             this.connectionString = config.ServiceBusConnectionString;
             EndpointName = config.EndpointName;
             this.errorQueueName = config.FailedMessagesQueue;
@@ -66,6 +70,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             try
             {
                 await Task.WhenAll(
+                    Listen(connection, cancellationToken),
+                    Listen(connection, cancellationToken),
                     Listen(connection, cancellationToken),
                     Listen(connection, cancellationToken));
 
@@ -89,7 +95,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                     var messageReceiver = new MessageReceiver(connection, EndpointName, ReceiveMode.PeekLock,
                         RetryPolicy.Default, 0);
                     var messages = new List<Message>();
-                    for (int i = 0; i < 3; i++)
+                    for (int i = 0; i < 5; i++)
                     {
                         var receivedMessages = await messageReceiver.ReceiveAsync(200, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                         if (receivedMessages == null || !receivedMessages.Any())
@@ -104,11 +110,20 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
 
                     var jobStatuses = messages.Where(IsJobStatusMessage)
                         .ToList();
-
-                    var tasks = new List<Task>() { ProcessMessages(jobStatuses, messageReceiver, cancellationToken) };
+                    var stopwatch = Stopwatch.StartNew();
+                    var tasks = new List<Task>()
+                    {
+                        ProcessMessages(jobStatuses, messageReceiver, cancellationToken)
+                    };
                     tasks.AddRange(messages.Where(msg => !IsJobStatusMessage(msg)).Select(msg => ProcessMessage(msg, messageReceiver, cancellationToken)));
                     await Task.WhenAll(tasks);
-
+                    stopwatch.Stop();
+                    var metrics = new Dictionary<string, double>
+                    {
+                        {TelemetryKeys.Duration, stopwatch.ElapsedMilliseconds},
+                        {TelemetryKeys.Count, messages.Count}
+                    };
+                    telemetry.TrackEvent("BatchedServiceBusCommunicationListener.ProcessBatch", metrics);
                     await messageReceiver.CompleteAsync(messages.Select(message =>
                         message.SystemProperties.LockToken));
                 }
