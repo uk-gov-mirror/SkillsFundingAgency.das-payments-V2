@@ -1,4 +1,3 @@
-@ignore issue to be fixed after go live
 # DC Integration
 #| learning support code | learning support date from | learning support date to |
 #| 1                     | 06/08/2018                 | 06/10/2019               |
@@ -28,30 +27,30 @@ Scenario Outline: Levy learner, Eng aim planned end date exceeds the actual end 
         | 2nd price details | 0                    | 06/Aug/Last Academic Year           | 0                      | 06/Aug/Last Academic Year             | Act1          | 2                   | 100%                        |
     And the following earnings had been generated for the learner
         | Delivery Period        | On-Programme | Completion | Balancing | LearningSupport | OnProgrammeMathsAndEnglish | Aim Sequence Number | Price Episode Identifier |
-        | Aug/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Sep/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Oct/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Nov/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Dec/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Jan/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Feb/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Mar/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Apr/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | May/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Jun/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Jul/Last Academic Year | 1000         | 0          | 0         | 0               | 0                          | 1                   | 1st price details        |
-        | Aug/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Sep/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Oct/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Nov/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Dec/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Jan/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Feb/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Mar/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Apr/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | May/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Jun/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
-        | Jul/Last Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        |
+        | Aug/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Sep/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Oct/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Nov/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Dec/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Jan/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Feb/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Mar/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Apr/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | May/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Jun/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Jul/Last Academic Year | 1000         | 0          | 0         | 150             | 0                          | 1                   | 1st price details        |
+        | Aug/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Sep/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Oct/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Nov/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Dec/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Jan/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Feb/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Mar/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Apr/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | May/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Jun/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
+        | Jul/Last Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        |
 
     And the following provider payments had been generated
         | Collection Period      | Delivery Period        | Levy Payments | SFA Fully-Funded Payments | Transaction Type           |
@@ -102,8 +101,8 @@ Scenario Outline: Levy learner, Eng aim planned end date exceeds the actual end 
     When the amended ILR file is re-submitted for the learners in collection period <Collection_Period>
     Then the following learner earnings should be generated
         | Delivery Period           | On-Programme | Completion | Balancing | LearningSupport | OnProgrammeMathsAndEnglish | Aim Sequence Number | Price Episode Identifier | Contract Type |
-        | Aug/Current Academic Year | 0            | 3000       | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
-        | Sep/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
+        | Aug/Current Academic Year | 0            | 3000       | 0         | 150             | 0                          | 1                   | 1st price details        | Act1          |
+        | Sep/Current Academic Year | 0            | 0          | 0         | 150             | 0                          | 1                   | 1st price details        | Act1          |
         | Oct/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
         | Nov/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
         | Dec/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
@@ -114,8 +113,8 @@ Scenario Outline: Levy learner, Eng aim planned end date exceeds the actual end 
         | May/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
         | Jun/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
         | Jul/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 1                   | 1st price details        | Act1          |
-        | Aug/Current Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        | Act1          |
-        | Sep/Current Academic Year | 0            | 0          | 0         | 150             | 33.64                      | 2                   | 2nd price details        | Act1          |
+        | Aug/Current Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        | Act1          |
+        | Sep/Current Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   | 2nd price details        | Act1          |
         | Oct/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 2                   | 2nd price details        | Act1          |
         | Nov/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 2                   | 2nd price details        | Act1          |
         | Dec/Current Academic Year | 0            | 0          | 0         | 0               | 0                          | 2                   | 2nd price details        | Act1          |
