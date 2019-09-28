@@ -28,7 +28,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure.Ioc
             builder.RegisterType<RecordJobMessageProcessingStatusHandler>()
                 .As<IHandleMessages<RecordJobMessageProcessingStatus>>()
                 .InstancePerLifetimeScope();
-
         }
     }
 }

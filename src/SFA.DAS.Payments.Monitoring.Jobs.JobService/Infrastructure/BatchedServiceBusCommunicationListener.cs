@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -19,10 +20,12 @@ using SFA.DAS.Payments.Application.Infrastructure.Ioc;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.Application.Infrastructure.UnitOfWork;
+using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.Monitoring.Jobs.Application;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.JobMessageProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
+using SFA.DAS.Payments.ServiceFabric.Core.Infrastructure.UnitOfWork;
 
 namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
 {
@@ -70,10 +73,11 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             try
             {
                 await Task.WhenAll(
-                    Listen(connection, cancellationToken),
-                    Listen(connection, cancellationToken),
-                    Listen(connection, cancellationToken),
-                    Listen(connection, cancellationToken));
+                    Listen(cancellationToken),
+                    Listen(cancellationToken),
+                    Listen(cancellationToken)
+//                Listen(connection, cancellationToken)
+                    );
 
             }
             catch (Exception ex)
@@ -86,37 +90,61 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             }
         }
 
-        private async Task Listen(ServiceBusConnection connection, CancellationToken cancellationToken)
+//        private async Task Listen(ServiceBusConnection connection, CancellationToken cancellationToken)
+        private async Task Listen(CancellationToken cancellationToken)
         {
+            var connection = new ServiceBusConnection(connectionString);
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     var messageReceiver = new MessageReceiver(connection, EndpointName, ReceiveMode.PeekLock,
                         RetryPolicy.Default, 0);
+                    var errorQueueSender = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
                     var messages = new List<Message>();
-                    for (int i = 0; i < 5; i++)
+                    for (var i = 0; i < 10 && messages.Count <= 200; i++)
                     {
-                        var receivedMessages = await messageReceiver.ReceiveAsync(200, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        var receivedMessages = await messageReceiver.ReceiveAsync(100, TimeSpan.FromSeconds(5))
+                            .ConfigureAwait(false);
                         if (receivedMessages == null || !receivedMessages.Any())
                             break;
                         messages.AddRange(receivedMessages);
                     }
+
                     if (!messages.Any())
                     {
                         await Task.Delay(2000, cancellationToken);
                         continue;
                     }
 
-                    var jobStatuses = messages.Where(IsJobStatusMessage)
-                        .ToList();
-                    var stopwatch = Stopwatch.StartNew();
-                    var tasks = new List<Task>()
+                    var groupedMessages = new Dictionary<Type, List<(string, object)>>();
+                    foreach (var message in messages)
                     {
-                        ProcessMessages(jobStatuses, messageReceiver, cancellationToken)
-                    };
-                    tasks.AddRange(messages.Where(msg => !IsJobStatusMessage(msg)).Select(msg => ProcessMessage(msg, messageReceiver, cancellationToken)));
-                    await Task.WhenAll(tasks);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        try
+                        {
+                            var applicationMessage = DeserializeMessage(message);
+                            var key = applicationMessage.GetType();
+                            var applicationMessages = groupedMessages.ContainsKey(key)
+                                ? groupedMessages[key]
+                                : groupedMessages[key] = new List<(string, object)>();
+                            applicationMessages.Add((message.SystemProperties.LockToken, applicationMessage));
+
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError($"Error deserialising the message. Error: {e.Message}", e);
+                            await errorQueueSender.SendAsync(message).ConfigureAwait(false);
+                            await messageReceiver.CompleteAsync(message.SystemProperties.LockToken)
+                                .ConfigureAwait(false);
+                            //TODO: messages that can't be deserialised should be sent to error queue
+                        }
+                    }
+
+                    var stopwatch = Stopwatch.StartNew();
+                    await Task.WhenAll(groupedMessages.Select(group =>
+                        ProcessMessages(group.Key, group.Value, messageReceiver, cancellationToken)));
                     stopwatch.Stop();
                     var metrics = new Dictionary<string, double>
                     {
@@ -124,92 +152,154 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                         {TelemetryKeys.Count, messages.Count}
                     };
                     telemetry.TrackEvent("BatchedServiceBusCommunicationListener.ProcessBatch", metrics);
-                    await messageReceiver.CompleteAsync(messages.Select(message =>
-                        message.SystemProperties.LockToken));
                 }
+            }
+            catch (TaskCanceledException)
+            {
+                logger.LogWarning("Cancelling communication listener.");
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogWarning("Cancelling communication listener.");
+                return;
             }
             catch (Exception ex)
             {
                 logger.LogError($"Error listening for message.  Error: {ex.Message}", ex);
-                throw;
             }
         }
 
-        private bool IsJobStatusMessage(Message receivedMessage)
+        private object DeserializeMessage(Message message)
         {
-            if (!receivedMessage.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
-                return false;
-
-            var enclosedTypes = (string)receivedMessage.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
-            return enclosedTypes.Contains(
-                "SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands.RecordJobMessageProcessingStatus",
-                StringComparison.OrdinalIgnoreCase);
+            if (!message.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
+                throw new InvalidOperationException($"Cannot deserialise the message, no 'enclosed message types' header was found. Message id: {message.MessageId}, label: {message.Label}");
+            var enclosedTypes = (string)message.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
+            var typeName = enclosedTypes.Split(';').FirstOrDefault();
+            if (string.IsNullOrEmpty(typeName))
+                throw new InvalidOperationException($"Message type not found when trying to deserialise the message.  Message id: {message.MessageId}, label: {message.Label}");
+            var messageType = Type.GetType(typeName);
+            var sanitisedMessageJson = GetMessagePayload(message);
+            var deserialisedMessage = JsonConvert.DeserializeObject(sanitisedMessageJson, messageType);
+            return deserialisedMessage;
         }
 
-        private async Task ProcessMessage(Message receivedMessage, MessageReceiver messageReceiver,
+        //private bool IsJobStatusMessage(Message receivedMessage)
+        //{
+        //    if (!receivedMessage.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
+        //        return false;
+
+        //    var enclosedTypes = (string)receivedMessage.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
+        //    return enclosedTypes.Contains(
+        //        "SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands.RecordJobMessageProcessingStatus",
+        //        StringComparison.OrdinalIgnoreCase);
+        //}
+
+        protected async Task ProcessMessages(Type groupType, List<(string, object)> messages, MessageReceiver receiver,
             CancellationToken cancellationToken)
         {
             try
             {
-                if (!receivedMessage.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
-                {
-                    return;
-                }
-
-                var enclosedTypes = (string)receivedMessage.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
-                var typeName = enclosedTypes.Split(';').FirstOrDefault();
-                if (string.IsNullOrEmpty(typeName))
-                    return;
-                var messageType = Type.GetType(typeName);
-                var sanitisedMessageJson = GetMessagePayload(receivedMessage);
-                var monitoringMessage = JsonConvert.DeserializeObject(sanitisedMessageJson, messageType);
-                using (var scope = scopeFactory.CreateScope())
-                {
-                    var handler = scope.Resolve(typeof(IHandleMessages<>).MakeGenericType(messageType));
-                    var methodInfo = handler.GetType().GetMethod("Handle");
-                    if (methodInfo == null)
-                        throw new InvalidOperationException($"Handle method not found on NSB handler: {handler.GetType().Name} for message type: {typeName}");
-                    await (Task)methodInfo.Invoke(handler, new object[] { monitoringMessage, null });
-                }
-            }
-            catch (Exception e)
-            {
-                logger.LogError($"Error processing message. Error: {e.Message}", e);
-                //await messageReceiver.AbandonAsync(receivedMessage.SystemProperties.LockToken);
-                throw;
-            }
-
-        }
-
-        private async Task ProcessMessages(List<Message> receivedMessages, MessageReceiver messageReceiver,
-            CancellationToken cancellationToken)
-        {
-            try
-            {
-                var recordJobStatusMessages = receivedMessages
-                    .Select(msg =>
-                        JsonConvert.DeserializeObject<RecordJobMessageProcessingStatus>(GetMessagePayload(msg)))
-                    .ToList();
-
                 using (var containerScope = scopeFactory.CreateScope())
                 {
-                    var unitOfWorkScopeFactory = containerScope.Resolve<IUnitOfWorkScopeFactory>();
-                    using (var scope = unitOfWorkScopeFactory.Create($"JobService.RecordJobMessageProcessingStatus"))
+                    var unitOfWork = containerScope.Resolve<IStateManagerUnitOfWork>();
+                    try
                     {
-                        var service = scope.Resolve<IJobMessageService>();
-                        await service.RecordCompletedJobMessageStatus(recordJobStatusMessages, cancellationToken);
-                        await scope.Commit();
+                        await unitOfWork.Begin().ConfigureAwait(false);
+                        var handler = containerScope.Resolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType));
+                        var methodInfo = handler.GetType().GetMethod("Handle");
+                        if (methodInfo == null)
+                            throw new InvalidOperationException($"Handle method not found on handler: {handler.GetType().Name} for message type: {groupType.FullName}");
+
+
+                        var listType = typeof(List<>).MakeGenericType(groupType);
+                        var list = (IList) Activator.CreateInstance(listType);
+                        messages.Select(msg => msg.Item2).ToList().ForEach(message => list.Add(message));
+
+                        await (Task)methodInfo.Invoke(handler, new object[] { list, cancellationToken });
+                        await unitOfWork.End();
+                        await receiver.CompleteAsync(messages.Select(message =>
+                            message.Item1));
+                    }
+                    catch (Exception e)
+                    {
+                        await unitOfWork.End(e);
+                        throw;
                     }
                 }
             }
             catch (Exception e)
             {
-                logger.LogError($"Error processing message. Error: {e.Message}", e);
-                //await messageReceiver.AbandonAsync(receivedMessage.SystemProperties.LockToken);
-                throw;
+                logger.LogError($"Error processing messages. Error: {e.Message}", e);
+                await Task.WhenAll(messages.Select(message => receiver.AbandonAsync(message.Item1)));
             }
-
         }
+
+
+        //private async Task ProcessMessage(Message receivedMessage, MessageReceiver messageReceiver,
+        //    CancellationToken cancellationToken)
+        //{
+        //    try
+        //    {
+        //        if (!receivedMessage.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
+        //        {
+        //            return;
+        //        }
+
+        //        var enclosedTypes = (string)receivedMessage.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
+        //        var typeName = enclosedTypes.Split(';').FirstOrDefault();
+        //        if (string.IsNullOrEmpty(typeName))
+        //            return;
+        //        var messageType = Type.GetType(typeName);
+        //        var sanitisedMessageJson = GetMessagePayload(receivedMessage);
+        //        var monitoringMessage = JsonConvert.DeserializeObject(sanitisedMessageJson, messageType);
+        //        using (var scope = scopeFactory.CreateScope())
+        //        {
+        //            var handler = scope.Resolve(typeof(IHandleMessages<>).MakeGenericType(messageType));
+        //            var methodInfo = handler.GetType().GetMethod("Handle");
+        //            if (methodInfo == null)
+        //                throw new InvalidOperationException($"Handle method not found on NSB handler: {handler.GetType().Name} for message type: {typeName}");
+        //            await (Task)methodInfo.Invoke(handler, new object[] { monitoringMessage, null });
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        logger.LogError($"Error processing message. Error: {e.Message}", e);
+        //        //await messageReceiver.AbandonAsync(receivedMessage.SystemProperties.LockToken);
+        //        throw;
+        //    }
+
+        //}
+
+        //private async Task ProcessMessages(List<Message> receivedMessages, MessageReceiver messageReceiver,
+        //    CancellationToken cancellationToken)
+        //{
+        //    try
+        //    {
+        //        var recordJobStatusMessages = receivedMessages
+        //            .Select(msg =>
+        //                JsonConvert.DeserializeObject<RecordJobMessageProcessingStatus>(GetMessagePayload(msg)))
+        //            .ToList();
+
+        //        using (var containerScope = scopeFactory.CreateScope())
+        //        {
+        //            var unitOfWorkScopeFactory = containerScope.Resolve<IUnitOfWorkScopeFactory>();
+        //            using (var scope = unitOfWorkScopeFactory.Create($"JobService.RecordJobMessageProcessingStatus"))
+        //            {
+        //                var service = scope.Resolve<IJobMessageService>();
+        //                await service.RecordCompletedJobMessageStatus(recordJobStatusMessages, cancellationToken);
+        //                await scope.Commit();
+        //            }
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        logger.LogError($"Error processing message. Error: {e.Message}", e);
+        //        //await messageReceiver.AbandonAsync(receivedMessage.SystemProperties.LockToken);
+        //        throw;
+        //    }
+
+        //}
 
         private string GetMessagePayload(Message receivedMessage)
         {
