@@ -24,6 +24,7 @@
     <Parameter Name="Placement_Constraints" DefaultValue="" />
     <Parameter Name="JobStatusCheck_Interval" DefaultValue="00:02:00" />
     <Parameter Name="TimeToWaitForJobToComplete" DefaultValue="01:00:00" />
+    <Parameter Name="DasNServiceBusLicenseKey" DefaultValue="" />
   </Parameters>
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="SFA.DAS.Payments.Monitoring.Jobs.JobServicePkg" ServiceManifestVersion="1.0.0" />
@@ -47,6 +48,7 @@
             <Parameter Name="JobStatusCheck_Interval" Value="[JobStatusCheck_Interval]" />
             <Parameter Name="TimeToWaitForJobToComplete" Value="[TimeToWaitForJobToComplete]" />
             <Parameter Name="NumberOfNServiceBusThreads" Value="[NumberOfNServiceBusThreads]" />
+            <Parameter Name="DasNServiceBusLicenseKey" Value="[DasNServiceBusLicenseKey]" />
           </Section>
         </Settings>
       </ConfigOverride>
