@@ -74,7 +74,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             {
                 await Task.WhenAll(
                     //                    Listen(cancellationToken),
-                                        Listen(cancellationToken),
+                    //Listen(cancellationToken),
                     Listen(cancellationToken)
                     //                Listen(connection, cancellationToken)
                     );
@@ -85,7 +85,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             }
             finally
             {
-            //    await connection.CloseAsync();
+                //    await connection.CloseAsync();
             }
         }
 
@@ -135,8 +135,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                         catch (Exception e)
                         {
                             logger.LogError($"Error deserialising the message. Error: {e.Message}", e);
-                            await errorQueueSender.SendAsync(message).ConfigureAwait(false);
-                            await messageReceiver.CompleteAsync(message.SystemProperties.LockToken)
+                            //TODO: should use the error queue instead of dead letter queue
+                            await messageReceiver.DeadLetterAsync(message.SystemProperties.LockToken)
                                 .ConfigureAwait(false);
                         }
                     }
@@ -228,12 +228,14 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                         var methodInfo = handler.GetType().GetMethod("Handle");
                         if (methodInfo == null)
                             throw new InvalidOperationException($"Handle method not found on handler: {handler.GetType().Name} for message type: {groupType.FullName}");
-                        
+
                         var listType = typeof(List<>).MakeGenericType(groupType);
                         var list = (IList)Activator.CreateInstance(listType);
                         messages.Select(msg => msg.Item2).ToList().ForEach(message => list.Add(message));
 
+                        var handlerStopwatch = Stopwatch.StartNew();
                         await (Task)methodInfo.Invoke(handler, new object[] { list, cancellationToken });
+                        RecordMetric(handler.GetType().FullName, handlerStopwatch.ElapsedMilliseconds, list.Count);
                         await unitOfWork.End();
                         await receiver.CompleteAsync(messages.Select(message =>
                             message.Item1));
@@ -243,7 +245,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                         await unitOfWork.End(e);
                         throw;
                     }
-                    RecordBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
+                    RecordAllBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
                 }
             }
             catch (Exception e)
@@ -253,76 +255,21 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             }
         }
 
-
-        //private async Task ProcessMessage(Message receivedMessage, MessageReceiver messageReceiver,
-        //    CancellationToken cancellationToken)
-        //{
-        //    try
-        //    {
-        //        if (!receivedMessage.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
-        //        {
-        //            return;
-        //        }
-
-        //        var enclosedTypes = (string)receivedMessage.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
-        //        var typeName = enclosedTypes.Split(';').FirstOrDefault();
-        //        if (string.IsNullOrEmpty(typeName))
-        //            return;
-        //        var messageType = Type.GetType(typeName);
-        //        var sanitisedMessageJson = GetMessagePayload(receivedMessage);
-        //        var monitoringMessage = JsonConvert.DeserializeObject(sanitisedMessageJson, messageType);
-        //        using (var scope = scopeFactory.CreateScope())
-        //        {
-        //            var handler = scope.Resolve(typeof(IHandleMessages<>).MakeGenericType(messageType));
-        //            var methodInfo = handler.GetType().GetMethod("Handle");
-        //            if (methodInfo == null)
-        //                throw new InvalidOperationException($"Handle method not found on NSB handler: {handler.GetType().Name} for message type: {typeName}");
-        //            await (Task)methodInfo.Invoke(handler, new object[] { monitoringMessage, null });
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        logger.LogError($"Error processing message. Error: {e.Message}", e);
-        //        //await messageReceiver.AbandonAsync(receivedMessage.SystemProperties.LockToken);
-        //        throw;
-        //    }
-
-        //}
-
-        //private async Task ProcessMessages(List<Message> receivedMessages, MessageReceiver messageReceiver,
-        //    CancellationToken cancellationToken)
-        //{
-        //    try
-        //    {
-        //        var recordJobStatusMessages = receivedMessages
-        //            .Select(msg =>
-        //                JsonConvert.DeserializeObject<RecordJobMessageProcessingStatus>(GetMessagePayload(msg)))
-        //            .ToList();
-
-        //        using (var containerScope = scopeFactory.CreateScope())
-        //        {
-        //            var unitOfWorkScopeFactory = containerScope.Resolve<IUnitOfWorkScopeFactory>();
-        //            using (var scope = unitOfWorkScopeFactory.Create($"JobService.RecordJobMessageProcessingStatus"))
-        //            {
-        //                var service = scope.Resolve<IJobMessageService>();
-        //                await service.RecordCompletedJobMessageStatus(recordJobStatusMessages, cancellationToken);
-        //                await scope.Commit();
-        //            }
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        logger.LogError($"Error processing message. Error: {e.Message}", e);
-        //        //await messageReceiver.AbandonAsync(receivedMessage.SystemProperties.LockToken);
-        //        throw;
-        //    }
-
-        //}
-
         private string GetMessagePayload(Message receivedMessage)
         {
-            var doc = receivedMessage.GetBody<XmlElement>();
-            var messageBody = Convert.FromBase64String(doc.InnerText);
+            const string transportEncodingHeaderKey = "NServiceBus.Transport.Encoding";
+            var transportEncoding = receivedMessage.UserProperties.ContainsKey(transportEncodingHeaderKey)
+                ? (string)receivedMessage.UserProperties[transportEncodingHeaderKey]
+                : "application/octect-stream";
+            byte[] messageBody;
+            if (transportEncoding.Equals("wcf/byte-array", StringComparison.OrdinalIgnoreCase))
+            {
+                var doc = receivedMessage.GetBody<XmlElement>();
+                messageBody = Convert.FromBase64String(doc.InnerText);
+            }
+            else
+                messageBody = receivedMessage.Body;
+
             var monitoringMessageJson = Encoding.UTF8.GetString(messageBody);
             var sanitisedMessageJson = monitoringMessageJson
                 .Trim(Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble())
