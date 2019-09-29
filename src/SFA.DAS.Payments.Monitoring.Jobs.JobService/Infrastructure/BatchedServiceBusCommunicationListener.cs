@@ -69,16 +69,15 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
         protected virtual async Task ListenForMessages(CancellationToken cancellationToken)
         {
             await EnsureQueue(EndpointName).ConfigureAwait(false);
-            var connection = new ServiceBusConnection(connectionString);
+            //var connection = new ServiceBusConnection(connectionString);
             try
             {
                 await Task.WhenAll(
-                    Listen(cancellationToken),
-                    Listen(cancellationToken),
+                    //                    Listen(cancellationToken),
+                                        Listen(cancellationToken),
                     Listen(cancellationToken)
-//                Listen(connection, cancellationToken)
+                    //                Listen(connection, cancellationToken)
                     );
-
             }
             catch (Exception ex)
             {
@@ -86,26 +85,27 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             }
             finally
             {
-                await connection.CloseAsync();
+            //    await connection.CloseAsync();
             }
         }
 
-//        private async Task Listen(ServiceBusConnection connection, CancellationToken cancellationToken)
+        //        private async Task Listen(ServiceBusConnection connection, CancellationToken cancellationToken)
         private async Task Listen(CancellationToken cancellationToken)
         {
             var connection = new ServiceBusConnection(connectionString);
+            var messageReceiver = new MessageReceiver(connection, EndpointName, ReceiveMode.PeekLock,
+                RetryPolicy.Default, 0);
+            var errorQueueSender = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    var messageReceiver = new MessageReceiver(connection, EndpointName, ReceiveMode.PeekLock,
-                        RetryPolicy.Default, 0);
-                    var errorQueueSender = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
+                    var pipeLineStopwatch = Stopwatch.StartNew();
                     var messages = new List<Message>();
                     for (var i = 0; i < 10 && messages.Count <= 200; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        var receivedMessages = await messageReceiver.ReceiveAsync(100, TimeSpan.FromSeconds(5))
+                        var receivedMessages = await messageReceiver.ReceiveAsync(200, TimeSpan.FromSeconds(2))
                             .ConfigureAwait(false);
                         if (receivedMessages == null || !receivedMessages.Any())
                             break;
@@ -138,7 +138,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                             await errorQueueSender.SendAsync(message).ConfigureAwait(false);
                             await messageReceiver.CompleteAsync(message.SystemProperties.LockToken)
                                 .ConfigureAwait(false);
-                            //TODO: messages that can't be deserialised should be sent to error queue
                         }
                     }
 
@@ -146,12 +145,9 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                     await Task.WhenAll(groupedMessages.Select(group =>
                         ProcessMessages(group.Key, group.Value, messageReceiver, cancellationToken)));
                     stopwatch.Stop();
-                    var metrics = new Dictionary<string, double>
-                    {
-                        {TelemetryKeys.Duration, stopwatch.ElapsedMilliseconds},
-                        {TelemetryKeys.Count, messages.Count}
-                    };
-                    telemetry.TrackEvent("BatchedServiceBusCommunicationListener.ProcessBatch", metrics);
+                    //RecordAllBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
+                    pipeLineStopwatch.Stop();
+                    //RecordPipelineTelemetry(pipeLineStopwatch.ElapsedMilliseconds, messages.Count);
                 }
             }
             catch (TaskCanceledException)
@@ -168,6 +164,38 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             {
                 logger.LogError($"Error listening for message.  Error: {ex.Message}", ex);
             }
+            finally
+            {
+                if (!messageReceiver.IsClosedOrClosing)
+                    await messageReceiver.CloseAsync();
+                if (!connection.IsClosedOrClosing)
+                    await connection.CloseAsync();
+            }
+        }
+
+        private void RecordBatchProcessTelemetry(long elapsedMilliseconds, int count)
+        {
+            RecordMetric("BatchedServiceBusCommunicationListener.ProcessBatches", elapsedMilliseconds, count);
+        }
+
+        private void RecordAllBatchProcessTelemetry(long elapsedMilliseconds, int count)
+        {
+            RecordMetric("BatchedServiceBusCommunicationListener.ProcessAllBatches", elapsedMilliseconds, count);
+        }
+
+        private void RecordPipelineTelemetry(long elapsedMilliseconds, int count)
+        {
+            RecordMetric("BatchedServiceBusCommunicationListener.Pipeline", elapsedMilliseconds, count);
+        }
+
+        private void RecordMetric(string eventName, long elapsedMilliseconds, int count)
+        {
+            var metrics = new Dictionary<string, double>
+            {
+                {TelemetryKeys.Duration, elapsedMilliseconds},
+                {TelemetryKeys.Count, count}
+            };
+            telemetry.TrackEvent(eventName, metrics);
         }
 
         private object DeserializeMessage(Message message)
@@ -184,17 +212,6 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             return deserialisedMessage;
         }
 
-        //private bool IsJobStatusMessage(Message receivedMessage)
-        //{
-        //    if (!receivedMessage.UserProperties.ContainsKey(NServiceBus.Headers.EnclosedMessageTypes))
-        //        return false;
-
-        //    var enclosedTypes = (string)receivedMessage.UserProperties[NServiceBus.Headers.EnclosedMessageTypes];
-        //    return enclosedTypes.Contains(
-        //        "SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands.RecordJobMessageProcessingStatus",
-        //        StringComparison.OrdinalIgnoreCase);
-        //}
-
         protected async Task ProcessMessages(Type groupType, List<(string, object)> messages, MessageReceiver receiver,
             CancellationToken cancellationToken)
         {
@@ -202,6 +219,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
             {
                 using (var containerScope = scopeFactory.CreateScope())
                 {
+                    var stopwatch = Stopwatch.StartNew();
                     var unitOfWork = containerScope.Resolve<IStateManagerUnitOfWork>();
                     try
                     {
@@ -210,10 +228,9 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                         var methodInfo = handler.GetType().GetMethod("Handle");
                         if (methodInfo == null)
                             throw new InvalidOperationException($"Handle method not found on handler: {handler.GetType().Name} for message type: {groupType.FullName}");
-
-
+                        
                         var listType = typeof(List<>).MakeGenericType(groupType);
-                        var list = (IList) Activator.CreateInstance(listType);
+                        var list = (IList)Activator.CreateInstance(listType);
                         messages.Select(msg => msg.Item2).ToList().ForEach(message => list.Add(message));
 
                         await (Task)methodInfo.Invoke(handler, new object[] { list, cancellationToken });
@@ -226,6 +243,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure
                         await unitOfWork.End(e);
                         throw;
                     }
+                    RecordBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
                 }
             }
             catch (Exception e)

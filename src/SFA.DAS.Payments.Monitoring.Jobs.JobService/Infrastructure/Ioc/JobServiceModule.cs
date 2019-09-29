@@ -17,17 +17,17 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService.Infrastructure.Ioc
             builder.RegisterType<BatchedServiceBusCommunicationListener>()
                 .As<IBatchedServiceBusCommunicationListener>();
 
-            builder.RegisterType<RecordEarningsJobHandler>()
-                .As<IHandleMessages<RecordEarningsJob>>()
-                .InstancePerLifetimeScope();
+            //builder.RegisterType<RecordEarningsJobHandler>()
+            //    .As<IHandleMessages<RecordEarningsJob>>()
+            //    .InstancePerLifetimeScope();
 
-            builder.RegisterType<RecordEarningsJobAdditionalMessagesHandler>()
-                .As<IHandleMessages<RecordEarningsJobAdditionalMessages>>()
-                .InstancePerLifetimeScope();
+            //builder.RegisterType<RecordEarningsJobAdditionalMessagesHandler>()
+            //    .As<IHandleMessages<RecordEarningsJobAdditionalMessages>>()
+            //    .InstancePerLifetimeScope();
 
-            builder.RegisterType<RecordJobMessageProcessingStatusHandler>()
-                .As<IHandleMessages<RecordJobMessageProcessingStatus>>()
-                .InstancePerLifetimeScope();
+            //builder.RegisterType<RecordJobMessageProcessingStatusHandler>()
+            //    .As<IHandleMessages<RecordJobMessageProcessingStatus>>()
+            //    .InstancePerLifetimeScope();
         }
     }
 }
