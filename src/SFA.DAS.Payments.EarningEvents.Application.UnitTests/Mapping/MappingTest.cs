@@ -102,7 +102,7 @@ namespace SFA.DAS.Payments.EarningEvents.Application.UnitTests.Mapping
                             },
                             new LearningDeliveryPeriodisedValues
                             {
-                                AttributeName = "PriceEpisodeLSFCash",
+                                AttributeName = "LearnSuppFundCash",
                                 Period1 = 0,
                                 Period2 = 150,
                                 Period3 = 0,
@@ -1023,7 +1023,7 @@ namespace SFA.DAS.Payments.EarningEvents.Application.UnitTests.Mapping
                         },
                         new LearningDeliveryPeriodisedValues
                         {
-                            AttributeName = "PriceEpisodeLSFCash",
+                            AttributeName = "LearnSuppFundCash",
                             Period1 = fm36Earning,
                             Period2 = 0,
                             Period3 = 0,

@@ -18,7 +18,7 @@ namespace SFA.DAS.Payments.EarningEvents.Application.Mapping
             {
                 {"MathEngBalPayment", FunctionalSkillType.BalancingMathsAndEnglish},
                 {"MathEngOnProgPayment", FunctionalSkillType.OnProgrammeMathsAndEnglish},
-                {"PriceEpisodeLSFCash", FunctionalSkillType.LearningSupport},
+                {"LearnSuppFundCash", FunctionalSkillType.LearningSupport},
             };
 
         public ReadOnlyCollection<FunctionalSkillEarning> Resolve(IntermediateLearningAim source, FunctionalSkillEarningsEvent destination, ReadOnlyCollection<FunctionalSkillEarning> destMember, ResolutionContext context)
