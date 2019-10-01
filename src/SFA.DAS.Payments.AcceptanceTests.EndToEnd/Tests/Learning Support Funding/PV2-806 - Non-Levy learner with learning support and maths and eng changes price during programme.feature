@@ -14,28 +14,28 @@ Scenario Outline: Non-Levy learner with learning support and maths and eng chang
 		| 06/Aug/Current Academic Year | 12 months        | 12000                | 04/Aug/Current Academic Year        | 3000                   | 04/Aug/Current Academic Year          |                 | continuing        | Act2          | ZPROG001      | 90%                         | 19-24 Apprenticeship Non-Levy | 593            | 1            | 20             |
 		| 06/Aug/Current Academic Year | 12 months        | 12000                | 04/Aug/Current Academic Year        | 3000                   | 04/Aug/Current Academic Year          |                 | continuing        | Act2          | 12345         | 100%                        | 19-24 Apprenticeship Non-Levy | 593            | 1            | 20             |
 	And the following aims
-		| Aim Type         | Aim Reference | Start Date                   | Planned Duration | Actual Duration | Aim Sequence Number | Framework Code | Pathway Code | Programme Type | Funding Line Type             | Completion Status | Price Episode Id  |
-		| Programme        | ZPROG001      | 04/Aug/Current Academic Year | 12 months        |                 | 1                   | 593            | 1            | 20             | 19-24 Apprenticeship Non-Levy | continuing        | 1st Price Details |
-		| Maths or English | 12345         | 04/Aug/Current Academic Year | 14 months        |                 | 2                   | 593            | 1            | 20             | 19-24 Apprenticeship Non-Levy | continuing        |                   |
+		| Aim Type         | Aim Reference | Start Date                   | Planned Duration | Actual Duration | Aim Sequence Number | Framework Code | Pathway Code | Programme Type | Funding Line Type             | Completion Status | Price Episode Id |
+		| Programme        | ZPROG001      | 04/Aug/Current Academic Year | 12 months        |                 | 1                   | 593            | 1            | 20             | 19-24 Apprenticeship Non-Levy | continuing        | pe-1             |
+		| Maths or English | 12345         | 04/Aug/Current Academic Year | 14 months        |                 | 2                   | 593            | 1            | 20             | 19-24 Apprenticeship Non-Levy | continuing        |                  |
 	And price details as follows	
-        | Price Episode Id  | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Contract Type | Aim Sequence Number | SFA Contribution Percentage |
-        | 1st Price Details | 11250                | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 1                   | 90%                         |
-        |                   | 0                    | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 2                   | 100%                        |
+        | Price Episode Id | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Contract Type | Aim Sequence Number | SFA Contribution Percentage |
+        | pe-1             | 11250                | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 1                   | 90%                         |
+        |                  | 0                    | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 2                   | 100%                        |
     And the following earnings had been generated for the learner
         | Delivery Period           | On-Programme | Completion | Balancing | LearningSupport | OnProgrammeMathsAndEnglish | Aim Sequence Number | Price Episode Identifier |
 		#p1
-        | Aug/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Sep/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Oct/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Nov/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Dec/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Jan/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Feb/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Mar/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Apr/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | May/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Jun/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
-        | Jul/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        |
+        | Aug/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Sep/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Oct/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Nov/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Dec/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Jan/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Feb/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Mar/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Apr/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | May/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Jun/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
+        | Jul/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     |
         #p2
         | Aug/Current Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   |                          |
         | Sep/Current Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   |                          |
@@ -51,12 +51,12 @@ Scenario Outline: Non-Levy learner with learning support and maths and eng chang
         | Jul/Current Academic Year | 0            | 0          | 0         | 0               | 33.64                      | 2                   |                          |
     And the following provider payments had been generated
         | Collection Period         | Delivery Period           | SFA Co-Funded Payments | Employer Co-Funded Payments | SFA Fully-Funded Payments | Transaction Type           | Price Episode Identifier |
-        | R01/Current Academic Year | Aug/Current Academic Year | 675                    | 75                          | 0                         | Learning                   | 1st Price Details        |
-        | R02/Current Academic Year | Sep/Current Academic Year | 675                    | 75                          | 0                         | Learning                   | 1st Price Details        |
-        | R03/Current Academic Year | Oct/Current Academic Year | 675                    | 75                          | 0                         | Learning                   | 1st Price Details        |
-        | R01/Current Academic Year | Aug/Current Academic Year | 0                      | 0                           | 150                       | LearningSupport            | 1st Price Details        |
-        | R02/Current Academic Year | Sep/Current Academic Year | 0                      | 0                           | 150                       | LearningSupport            | 1st Price Details        |
-        | R03/Current Academic Year | Oct/Current Academic Year | 0                      | 0                           | 150                       | LearningSupport            | 1st Price Details        |
+        | R01/Current Academic Year | Aug/Current Academic Year | 675                    | 75                          | 0                         | Learning                   | pe-1                     |
+        | R02/Current Academic Year | Sep/Current Academic Year | 675                    | 75                          | 0                         | Learning                   | pe-1                     |
+        | R03/Current Academic Year | Oct/Current Academic Year | 675                    | 75                          | 0                         | Learning                   | pe-1                     |
+        | R01/Current Academic Year | Aug/Current Academic Year | 0                      | 0                           | 150                       | LearningSupport            | pe-1                     |
+        | R02/Current Academic Year | Sep/Current Academic Year | 0                      | 0                           | 150                       | LearningSupport            | pe-1                     |
+        | R03/Current Academic Year | Oct/Current Academic Year | 0                      | 0                           | 150                       | LearningSupport            | pe-1                     |
         | R01/Current Academic Year | Aug/Current Academic Year | 0                      | 0                           | 33.64                     | OnProgrammeMathsAndEnglish |                          |
         | R02/Current Academic Year | Sep/Current Academic Year | 0                      | 0                           | 33.64                     | OnProgrammeMathsAndEnglish |                          |
         | R03/Current Academic Year | Oct/Current Academic Year | 0                      | 0                           | 33.64                     | OnProgrammeMathsAndEnglish |                          |
@@ -66,16 +66,16 @@ Scenario Outline: Non-Levy learner with learning support and maths and eng chang
 		| Maths or English | 12345         | 04/Aug/Current Academic Year | 14 months        |                 | 2                   | 593            | 1            | 20             | 19-24 Apprenticeship Non-Levy | continuing        |                   |
 	And price details are changed as follows	
         | Price Episode Id  | Total Training Price | Total Training Price Effective Date | Total Assessment Price | Total Assessment Price Effective Date | Contract Type | Aim Sequence Number | SFA Contribution Percentage |
-        | 1st Price Details | 11250                | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 1                   | 90%                         |
+        | pe-1              | 11250                | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 1                   | 90%                         |
         |                   | 0                    | 04/Aug/Current Academic Year        | 0                      | 04/Aug/Current Academic Year          | Act2          | 2                   | 100%                        |
         | 3rd Price Details | 6750                 | 11/Nov/Current Academic Year        | 0                      | 11/Nov/Current Academic Year          | Act2          | 1                   | 90%                         |
 	When the amended ILR file is re-submitted for the learners in collection period <Collection_Period>
     Then the following learner earnings should be generated
          | Delivery Period           | On-Programme | Completion | Balancing | LearningSupport | OnProgrammeMathsAndEnglish | Aim Sequence Number | Price Episode Identifier | Contract Type |
 		#p1																																									   
-         | Aug/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        | Act2          |
-         | Sep/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        | Act2          |
-         | Oct/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | 1st Price Details        | Act2          |
+         | Aug/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     | Act2          |
+         | Sep/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     | Act2          |
+         | Oct/Current Academic Year | 750          | 0          | 0         | 150             | 0                          | 1                   | pe-1                     | Act2          |
          | Nov/Current Academic Year | 350          | 0          | 0         | 150             | 0                          | 1                   | 3rd Price Details        | Act2          |
          | Dec/Current Academic Year | 350          | 0          | 0         | 150             | 0                          | 1                   | 3rd Price Details        | Act2          |
          | Jan/Current Academic Year | 350          | 0          | 0         | 150             | 0                          | 1                   | 3rd Price Details        | Act2          |
