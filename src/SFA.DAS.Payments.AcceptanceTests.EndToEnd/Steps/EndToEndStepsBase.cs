@@ -292,8 +292,16 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             var otherTraining = learnerTraining.FirstOrDefault(t => t.AimReference != "ZPROG001" && (string.IsNullOrWhiteSpace(t.LearnerId) || t.LearnerId.Equals(providerPayment.LearnerId)));
             var list = new List<PaymentModel>();
             if (providerPayment.SfaFullyFundedPayments > 0)
-                list.Add(CreatePaymentModel(providerPayment, otherTraining ?? onProgTraining, jobId, submissionTime, 1M,
-                    providerPayment.SfaFullyFundedPayments, FundingSourceType.FullyFundedSfa, ukprn, providerPayment.AccountId, providerPayment.SendingAccountId));
+                if(string.IsNullOrWhiteSpace(providerPayment.PriceEpisodeIdentifier))
+                {
+                    list.Add(CreatePaymentModel(providerPayment, otherTraining ?? onProgTraining, jobId, submissionTime, 1M, providerPayment.SfaFullyFundedPayments, 
+                                                FundingSourceType.FullyFundedSfa, ukprn, providerPayment.AccountId, providerPayment.SendingAccountId));
+                }
+                else
+                {
+                    list.Add(CreatePaymentModel(providerPayment, onProgTraining, jobId, submissionTime, 1M, providerPayment.SfaFullyFundedPayments,
+                                                FundingSourceType.FullyFundedSfa, ukprn, providerPayment.AccountId, providerPayment.SendingAccountId));
+                }
 
             if (providerPayment.EmployerCoFundedPayments > 0)
                 list.Add(CreatePaymentModel(providerPayment, onProgTraining, jobId, submissionTime,
@@ -401,9 +409,10 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
 
                 if (aim.IsMainAim)
                 {
+                    // Learning Support is in price episodes (if the main aim is open)
                     learner.PriceEpisodes.AddRange(GeneratePriceEpisodes(aim, earnings));
                 }
-                else // maths & english & Learning support don't use price episodes
+                else // maths & english & Learning support (if main aim is closed) don't use price episodes
                 {
                     learningDelivery.LearningDeliveryPeriodisedValues = SetPeriodisedValues<LearningDeliveryPeriodisedValues>(aim, earnings);
                     learningDelivery.LearningDeliveryPeriodisedTextValues = SetPeriodisedTextValues(aim, earnings);
@@ -630,7 +639,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                         continue;
                     }
 
-                    var earningKey = earningValue.Key.ToAttributeName();
+                    var earningKey = earningValue.Key.ToAttributeName(aim.IsMainAim);
 
                     var periodisedValues = aimPeriodisedValues.SingleOrDefault(v => v.AttributeName == earningKey);
                     if (periodisedValues == null)
