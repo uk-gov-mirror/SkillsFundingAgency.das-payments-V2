@@ -30,7 +30,7 @@ namespace SFA.DAS.Payments.DataLocks.Domain.Services.CourseValidation
             }
             
             var apprenticeshipPriceEpisodes = dataLockValidationModel.Apprenticeship.ApprenticeshipPriceEpisodes
-                .Where(priceEpisode => priceEpisode.StartDate <= dataLockValidationModel.PriceEpisode.EffectiveTotalNegotiatedPriceStartDate && !priceEpisode.Removed)
+                .Where(priceEpisode => priceEpisode.StartDate <= dataLockValidationModel.PriceEpisode?.EffectiveTotalNegotiatedPriceStartDate && !priceEpisode.Removed)
                 .ToList();
             return apprenticeshipPriceEpisodes;
         }
