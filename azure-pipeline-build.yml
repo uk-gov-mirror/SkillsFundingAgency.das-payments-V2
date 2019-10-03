@@ -1,0 +1,16 @@
+parameters:
+steps:
+- ${{ each project in parameters.project }}:
+  - task: MSBuild@1
+    displayName: 'Build solution ${{ project }}
+    inputs:
+      solution: '$(ServiceFabricProjectLocation)\${{project}}'
+      msbuildArchitecture: x64
+      platform: '$(ServiceFabricBuildPlatform)'
+      configuration: '$(BuildConfiguration)'
+      msbuildArguments: '/p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /t:Package /p:PackageLocation="$(build.artifactstagingdirectory)\${{project}}\ApplicationPackage" /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
+      maximumCpuCount: true
+      logProjectEvents: true
+      createLogFile: true
+      continueOnError: true
+   
