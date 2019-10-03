@@ -574,6 +574,29 @@ namespace SFA.DAS.Payments.EarningEvents.Application.UnitTests.Mapping
         }
 
         [Test]
+        public void TestChangeOfPriceWithMathsAndEnglishLearningSupport()
+        {
+            fm36Learner = Fm36LearnerWithMathsAndEnglishLearningSupport();
+
+            learningAim = new IntermediateLearningAim(processLearnerCommand, fm36Learner.PriceEpisodes, fm36Learner.LearningDeliveries[0]);
+            var earningEvent = Mapper.Instance.Map<IntermediateLearningAim, ApprenticeshipContractType2EarningEvent>(learningAim);
+
+            earningEvent.PriceEpisodes.Should().HaveCount(2);
+            earningEvent.OnProgrammeEarnings.Should().HaveCount(3);
+            earningEvent.IncentiveEarnings.Should().HaveCount(1);
+
+            var learning = earningEvent.OnProgrammeEarnings.Single(e => e.Type == OnProgrammeEarningType.Learning);
+            learning.Periods.Should().HaveCount(12);
+            learning.Periods.Count(p => p.PriceEpisodeIdentifier == "20-593-1-04/08/2018").Should().Be(3);
+            learning.Periods.Count(p => p.PriceEpisodeIdentifier == "20-593-1-11/11/2018").Should().Be(9);
+
+            var support = earningEvent.IncentiveEarnings.Single(e => e.Type == IncentiveEarningType.LearningSupport);
+            support.Periods.Should().HaveCount(12);
+            support.Periods.Count(p => p.PriceEpisodeIdentifier == "20-593-1-04/08/2018").Should().Be(3);
+            support.Periods.Count(p => p.PriceEpisodeIdentifier == "20-593-1-11/11/2018").Should().Be(9);
+        }
+
+        [Test]
         public void TestOnlyCurrentYearPriceEpisodesGetCopied()
         {
             
@@ -1100,6 +1123,397 @@ namespace SFA.DAS.Payments.EarningEvents.Application.UnitTests.Mapping
                  default:
                      return string.Empty;
             }
+        }
+
+        private static FM36Learner Fm36LearnerWithMathsAndEnglishLearningSupport()
+        {
+            return new FM36Learner
+            {
+                ULN = 9900529102,
+                LearnRefNumber = "0fm36806",
+                PriceEpisodes = new List<PriceEpisode>
+                                       {
+                                           new PriceEpisode
+                                           {
+                                               PriceEpisodeIdentifier = "20-593-1-04/08/2018",
+                                               PriceEpisodeValues = new PriceEpisodeValues
+                                                                    {
+                                                                        EpisodeStartDate = DateTime.Parse("2018-08-04T00:00:00+00:00"),
+                                                                        TNP1 = 11250.0m,
+                                                                        TNP2 = 0.0m,
+                                                                        TNP3 = 0.0m,
+                                                                        TNP4 = 0.0m,
+                                                                        PriceEpisodeUpperBandLimit = 15000.0m,
+                                                                        PriceEpisodePlannedEndDate =
+                                                                            DateTime.Parse("2019-08-04T00:00:00+00:00"),
+                                                                        PriceEpisodeActualEndDate =
+                                                                            DateTime.Parse("2018-11-10T00:00:00+00:00"),
+                                                                        PriceEpisodeTotalTNPPrice = 11250.0m,
+                                                                        PriceEpisodeUpperLimitAdjustment = 0.0m,
+                                                                        PriceEpisodePlannedInstalments = 12,
+                                                                        PriceEpisodeActualInstalments = 3,
+                                                                        PriceEpisodeInstalmentsThisPeriod = null,
+                                                                        PriceEpisodeCompletionElement = 2250.0m,
+                                                                        PriceEpisodePreviousEarnings = 0.0m,
+                                                                        PriceEpisodeInstalmentValue = 750.0m,
+                                                                        PriceEpisodeOnProgPayment = 0.0m,
+                                                                        PriceEpisodeTotalEarnings = 2250.0m,
+                                                                        PriceEpisodeBalanceValue = 0.0m,
+                                                                        PriceEpisodeBalancePayment = 0.0m,
+                                                                        PriceEpisodeCompleted = false,
+                                                                        PriceEpisodeCompletionPayment = 0.0m,
+                                                                        PriceEpisodeRemainingTNPAmount = 11250.0m,
+                                                                        PriceEpisodeRemainingAmountWithinUpperLimit = 15000.0m,
+                                                                        PriceEpisodeCappedRemainingTNPAmount = 11250.0m,
+                                                                        PriceEpisodeExpectedTotalMonthlyValue = 9000.0m,
+                                                                        PriceEpisodeAimSeqNumber = 1,
+                                                                        PriceEpisodeLSFCash = 0.0m,
+                                                                        PriceEpisodeFundLineType =
+                                                                            "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                        EpisodeEffectiveTNPStartDate =
+                                                                            DateTime.Parse("2018-08-04T00:00:00+00:00"),
+                                                                        PriceEpisodeContractType = "Non-Levy Contract"
+
+                                                                    },
+                                               PriceEpisodePeriodisedValues = new List<PriceEpisodePeriodisedValues>
+                                                                              {
+                                                                                  new PriceEpisodePeriodisedValues
+                                                                                  {
+                                                                                      AttributeName = "PriceEpisodeLSFCash",
+                                                                                      Period1 = 150.0m,
+                                                                                      Period2 = 150.0m,
+                                                                                      Period3 = 150.0m,
+                                                                                      Period4 = 0.0m,
+                                                                                      Period5 = 0.0m,
+                                                                                      Period6 = 0.0m,
+                                                                                      Period7 = 0.0m,
+                                                                                      Period8 = 0.0m,
+                                                                                      Period9 = 0.0m,
+                                                                                      Period10 = 0.0m,
+                                                                                      Period11 = 0.0m,
+                                                                                      Period12 = 0.0m
+                                                                                  },
+                                                                                  new PriceEpisodePeriodisedValues
+                                                                                  {
+                                                                                      AttributeName = "PriceEpisodeOnProgPayment",
+                                                                                      Period1 = 750.0m,
+                                                                                      Period2 = 750.0m,
+                                                                                      Period3 = 750.0m,
+                                                                                      Period4 = 0.0m,
+                                                                                      Period5 = 0.0m,
+                                                                                      Period6 = 0.0m,
+                                                                                      Period7 = 0.0m,
+                                                                                      Period8 = 0.0m,
+                                                                                      Period9 = 0.0m,
+                                                                                      Period10 = 0.0m,
+                                                                                      Period11 = 0.0m,
+                                                                                      Period12 = 0.0m
+                                                                                  },
+                                                                                  new PriceEpisodePeriodisedValues
+                                                                                  {
+                                                                                      AttributeName= "PriceEpisodeApplic1618FrameworkUpliftBalancing",
+                                                                                      Period1= 0.0m,
+                                                                                      Period2= 0.0m,
+                                                                                      Period3= 0.0m,
+                                                                                      Period4= 0.0m,
+                                                                                      Period5= 0.0m,
+                                                                                      Period6= 0.0m,
+                                                                                      Period7= 0.0m,
+                                                                                      Period8= 0.0m,
+                                                                                      Period9= 0.0m,
+                                                                                      Period10= 0.0m,
+                                                                                      Period11= 0.0m,
+                                                                                      Period12= 0.0m
+                                                                                  }
+                                                                              }
+                                           },
+                                           new PriceEpisode
+                                           {
+                                               PriceEpisodeIdentifier = "20-593-1-11/11/2018",
+                                               PriceEpisodeValues = new PriceEpisodeValues
+                                                                    {
+                                                                        EpisodeStartDate = DateTime.Parse("2018-11-11T00:00:00+00:00"),
+                                                                        TNP1 = 6750.0m,
+                                                                        TNP2 = 0.0m,
+                                                                        TNP3 = 0.0m,
+                                                                        TNP4 = 0.0m,
+                                                                        PriceEpisodeUpperBandLimit = 15000.0m,
+                                                                        PriceEpisodePlannedEndDate =
+                                                                            DateTime.Parse("2019-08-04T00:00:00+00:00"),
+                                                                        PriceEpisodeActualEndDate =
+                                                                            DateTime.Parse("2019-07-31T00:00:00+00:00"),
+                                                                        PriceEpisodeTotalTNPPrice = 6750.0m,
+                                                                        PriceEpisodeUpperLimitAdjustment = 0.0m,
+                                                                        PriceEpisodePlannedInstalments = 9,
+                                                                        PriceEpisodeActualInstalments = 9,
+                                                                        PriceEpisodeInstalmentsThisPeriod = null,
+                                                                        PriceEpisodeCompletionElement = 1350.0m,
+                                                                        PriceEpisodePreviousEarnings = 2250.0m,
+                                                                        PriceEpisodeInstalmentValue = 350.0m,
+                                                                        PriceEpisodeOnProgPayment = 0.0m,
+                                                                        PriceEpisodeTotalEarnings = 3150.0m,
+                                                                        PriceEpisodeBalanceValue = 0.0m,
+                                                                        PriceEpisodeBalancePayment = 0.0m,
+                                                                        PriceEpisodeCompleted = false,
+                                                                        PriceEpisodeCompletionPayment = 0.0m,
+                                                                        PriceEpisodeRemainingTNPAmount = 4500.0m,
+                                                                        PriceEpisodeRemainingAmountWithinUpperLimit = 12750.0m,
+                                                                        PriceEpisodeCappedRemainingTNPAmount = 4500.0m,
+                                                                        PriceEpisodeExpectedTotalMonthlyValue = 3150.0m,
+                                                                        PriceEpisodeAimSeqNumber = 1,
+                                                                        PriceEpisodeLSFCash = 0.0m,
+                                                                        PriceEpisodeFundLineType =
+                                                                            "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                        EpisodeEffectiveTNPStartDate =
+                                                                            DateTime.Parse("2018-11-11T00:00:00+00:00"),
+                                                                        PriceEpisodeContractType = "Non-Levy Contract"
+                                                                    },
+                                               PriceEpisodePeriodisedValues = new List<PriceEpisodePeriodisedValues>
+                                                                              {
+                                                                                  new PriceEpisodePeriodisedValues
+                                                                                  {
+                                                                                      AttributeName = "PriceEpisodeLSFCash",
+                                                                                      Period1 = 0.0m,
+                                                                                      Period2 = 0.0m,
+                                                                                      Period3 = 0.0m,
+                                                                                      Period4 = 150.0m,
+                                                                                      Period5 = 150.0m,
+                                                                                      Period6 = 150.0m,
+                                                                                      Period7 = 150.0m,
+                                                                                      Period8 = 150.0m,
+                                                                                      Period9 = 150.0m,
+                                                                                      Period10 = 150.0m,
+                                                                                      Period11 = 150.0m,
+                                                                                      Period12 = 150.0m
+                                                                                  },
+                                                                                  new PriceEpisodePeriodisedValues
+                                                                                  {
+                                                                                      AttributeName = "PriceEpisodeOnProgPayment",
+                                                                                      Period1 = 0.0m,
+                                                                                      Period2 = 0.0m,
+                                                                                      Period3 = 0.0m,
+                                                                                      Period4 = 350.0m,
+                                                                                      Period5 = 350.0m,
+                                                                                      Period6 = 350.0m,
+                                                                                      Period7 = 350.0m,
+                                                                                      Period8 = 350.0m,
+                                                                                      Period9 = 350.0m,
+                                                                                      Period10 = 350.0m,
+                                                                                      Period11 = 350.0m,
+                                                                                      Period12 = 350.0m
+                                                                                  },
+                                                                                  new PriceEpisodePeriodisedValues
+                                                                                  {
+                                                                                      AttributeName= "PriceEpisodeApplic1618FrameworkUpliftBalancing",
+                                                                                      Period1= 0.0m,
+                                                                                      Period2= 0.0m,
+                                                                                      Period3= 0.0m,
+                                                                                      Period4= 0.0m,
+                                                                                      Period5= 0.0m,
+                                                                                      Period6= 0.0m,
+                                                                                      Period7= 0.0m,
+                                                                                      Period8= 0.0m,
+                                                                                      Period9= 0.0m,
+                                                                                      Period10= 0.0m,
+                                                                                      Period11= 0.0m,
+                                                                                      Period12= 0.0m
+                                                                                  }
+                                                                              }
+                                           }
+                                       },
+                LearningDeliveries = new List<LearningDelivery>
+                                            {
+                                                new LearningDelivery
+                                                {
+                                                    AimSeqNumber = 1,
+                                                    LearningDeliveryValues = new LearningDeliveryValues
+                                                                             {
+                                                                                 Completed = false,
+                                                                                 FworkCode = 593,
+                                                                                 LearnAimRef = "ZPROG001",
+                                                                                 LearnStartDate = DateTime.Parse("2018-08-04T00:00:00+00:00"),
+                                                                                 LearnDelInitialFundLineType =
+                                                                                     "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                 LearnDelMathEng = false,
+                                                                                 LearnDelNonLevyProcured = true,
+                                                                                 MathEngAimValue = 0.0m,
+                                                                                 ProgType = 20,
+                                                                                 PwayCode = 1,
+                                                                                 StdCode = null
+                                                                             },
+                                                    LearningDeliveryPeriodisedValues = new List<LearningDeliveryPeriodisedValues>
+                                                                                       {
+                                                                                           new LearningDeliveryPeriodisedValues
+                                                                                           {
+                                                                                               AttributeName = "LearnSuppFundCash",
+                                                                                               Period1 = 150.0m,
+                                                                                               Period2 = 150.0m,
+                                                                                               Period3 = 150.0m,
+                                                                                               Period4 = 150.0m,
+                                                                                               Period5 = 150.0m,
+                                                                                               Period6 = 150.0m,
+                                                                                               Period7 = 150.0m,
+                                                                                               Period8 = 150.0m,
+                                                                                               Period9 = 150.0m,
+                                                                                               Period10 = 150.0m,
+                                                                                               Period11 = 150.0m,
+                                                                                               Period12 = 150.0m
+
+                                                                                           }
+                                                                                       },
+                                                    LearningDeliveryPeriodisedTextValues = new List<LearningDeliveryPeriodisedTextValues>
+                                                                                           {
+                                                                                               new LearningDeliveryPeriodisedTextValues
+                                                                                               {
+                                                                                                   AttributeName = "FundLineType",
+                                                                                                   Period1 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period2 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period3 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period4 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period5 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period6 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period7 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period8 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period9 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period10 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period11 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period12 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)"
+                                                                                               },
+                                                                                               new LearningDeliveryPeriodisedTextValues
+                                                                                               {
+                                                                                                   AttributeName = "LearnDelContType",
+                                                                                                   Period1 = "Non-Levy Contract",
+                                                                                                   Period2 = "Non-Levy Contract",
+                                                                                                   Period3 = "Non-Levy Contract",
+                                                                                                   Period4 = "Non-Levy Contract",
+                                                                                                   Period5 = "Non-Levy Contract",
+                                                                                                   Period6 = "Non-Levy Contract",
+                                                                                                   Period7 = "Non-Levy Contract",
+                                                                                                   Period8 = "Non-Levy Contract",
+                                                                                                   Period9 = "Non-Levy Contract",
+                                                                                                   Period10 = "Non-Levy Contract",
+                                                                                                   Period11 = "Non-Levy Contract",
+                                                                                                   Period12 = "Non-Levy Contract"
+                                                                                               }
+                                                                                           }
+                                                },
+                                                new LearningDelivery
+                                                {
+                                                    AimSeqNumber = 2,
+                                                    LearningDeliveryValues = new LearningDeliveryValues
+                                                                             {
+                                                                                 Completed = false,
+                                                                                 FworkCode = 593,
+                                                                                 LearnAimRef = "50093186",
+                                                                                 LearnStartDate = DateTime.Parse("2018-08-04T00:00:00+00:00"),
+                                                                                 LearnDelInitialFundLineType =
+                                                                                     "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                 LearnDelMathEng = true,
+                                                                                 LearnDelNonLevyProcured = true,
+                                                                                 MathEngAimValue = 471.0m,
+                                                                                 PlannedNumOnProgInstalm = 14,
+                                                                                 ProgType = 20,
+                                                                                 PwayCode = 1,
+                                                                                 StdCode = null
+                                                                             },
+                                                    LearningDeliveryPeriodisedValues = new List<LearningDeliveryPeriodisedValues>
+                                                                                       {
+                                                                                           new LearningDeliveryPeriodisedValues
+                                                                                           {
+                                                                                               AttributeName= "LearnSuppFundCash",
+                                                                                               Period1= 0.0m,
+                                                                                               Period2= 0.0m,
+                                                                                               Period3= 0.0m,
+                                                                                               Period4= 0.0m,
+                                                                                               Period5= 0.0m,
+                                                                                               Period6= 0.0m,
+                                                                                               Period7= 0.0m,
+                                                                                               Period8= 0.0m,
+                                                                                               Period9= 0.0m,
+                                                                                               Period10= 0.0m,
+                                                                                               Period11= 0.0m,
+                                                                                               Period12= 0.0m
+                                                                                           },
+                                                                                           new LearningDeliveryPeriodisedValues
+                                                                                           {
+                                                                                               AttributeName= "MathEngOnProgPayment",
+                                                                                               Period1= 33.6428571428571m,
+                                                                                               Period2= 33.6428571428571m,
+                                                                                               Period3= 33.6428571428571m,
+                                                                                               Period4= 33.6428571428571m,
+                                                                                               Period5= 33.6428571428571m,
+                                                                                               Period6= 33.6428571428571m,
+                                                                                               Period7= 33.6428571428571m,
+                                                                                               Period8= 33.6428571428571m,
+                                                                                               Period9= 33.6428571428571m,
+                                                                                               Period10= 33.6428571428571m,
+                                                                                               Period11= 33.6428571428571m,
+                                                                                               Period12= 33.6428571428571m
+
+                                                                                           }
+                                                                                       },
+                                                    LearningDeliveryPeriodisedTextValues = new List<LearningDeliveryPeriodisedTextValues>
+                                                                                           {
+                                                                                               new LearningDeliveryPeriodisedTextValues
+                                                                                               {
+                                                                                                   AttributeName = "FundLineType",
+                                                                                                   Period1 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period2 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period3 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period4 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period5 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period6 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period7 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period8 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period9 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period10 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period11 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)",
+                                                                                                   Period12 =
+                                                                                                       "19+ Apprenticeship Non-Levy Contract (procured)"
+                                                                                               },
+                                                                                               new LearningDeliveryPeriodisedTextValues
+                                                                                               {
+                                                                                                   AttributeName = "LearnDelContType",
+                                                                                                   Period1 = "Non-Levy Contract",
+                                                                                                   Period2 = "Non-Levy Contract",
+                                                                                                   Period3 = "Non-Levy Contract",
+                                                                                                   Period4 = "Non-Levy Contract",
+                                                                                                   Period5 = "Non-Levy Contract",
+                                                                                                   Period6 = "Non-Levy Contract",
+                                                                                                   Period7 = "Non-Levy Contract",
+                                                                                                   Period8 = "Non-Levy Contract",
+                                                                                                   Period9 = "Non-Levy Contract",
+                                                                                                   Period10 = "Non-Levy Contract",
+                                                                                                   Period11 = "Non-Levy Contract",
+                                                                                                   Period12 = "Non-Levy Contract"
+                                                                                               }
+                                                                                           }
+                                                }
+                                            }
+            };
         }
     }
 }
