@@ -1,0 +1,7 @@
+parameters:
+steps:
+- ${{ each project in parameters.project }}:
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish ${{ project }}
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/${{ project }}.zip'
