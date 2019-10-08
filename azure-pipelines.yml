@@ -54,6 +54,10 @@ steps:
   displayName: 'NuGet restore'
   inputs:
     vstsFeed: '1d5deb2d-cf8b-4bb1-b147-d13bc246e3f4'
+    
+- template: azure-pipeline-build.yml
+  parameters:
+  - SFA.DAS.Payments.EarningEvents.ServiceFabric
 
 - task: MSBuild@1
   displayName: 'Build sln'
@@ -66,6 +70,7 @@ steps:
     maximumCpuCount: true
     logProjectEvents: true
     createLogFile: true
+  enabled: false
 
 - task: MSBuild@1
   displayName: 'Build Database Project copy'
@@ -87,6 +92,7 @@ steps:
     Contents: '**\*.dacpac'
     TargetFolder: '$(build.artifactstagingdirectory)\Databases'
     flattenFolders: true
+  enabled: false
 
 - task: CopyFiles@2
   displayName: 'Copy Database Files to: Artifact AcceptanceTests'
@@ -94,8 +100,7 @@ steps:
     SourceFolder: '$(System.DefaultWorkingDirectory)/src/'
     Contents: |
      **\*AcceptanceTests*\**\bin\$(BuildConfiguration)\**
-     
-     
+  enabled: false
     TargetFolder: '$(build.artifactstagingdirectory)\AcceptanceTests'
     CleanTargetFolder: true
 
@@ -103,13 +108,15 @@ steps:
   displayName: 'dotnet build UnitTest Projects'
   inputs:
     projects: '**/*unittest*.csproj'
-
+  enabled: false
+  
 - task: DotNetCoreCLI@2
   displayName: 'dotnet test UnitTest Projects'
   inputs:
     command: test
     projects: '**/*unittest*.csproj'
     arguments: '--filter FullyQualifiedName~UnitTests'
+  enabled: false
 
 #Task group has not been exported, task groups are not supported yet
 
@@ -140,6 +147,7 @@ steps:
   inputs:
     targetPath: '$(build.artifactstagingdirectory)'
     artifact: drop
+  enabled: false
 
 #Task group has not been exported, task groups are not supported yet
 
@@ -162,3 +170,4 @@ steps:
   inputs:
     targetPath: src/Scripts
     artifact: 'Scripts Drop'
+  enabled: false
