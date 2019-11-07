@@ -336,6 +336,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             {
                 await StartMonthEnd(provider).ConfigureAwait(false);
             }
+
+            //wait for payment to be processed before doing moth end
+            await Task.Delay(TimeSpan.FromSeconds(60));
         }
 
         [Then(@"at month end only the following provider payments will be generated")]
