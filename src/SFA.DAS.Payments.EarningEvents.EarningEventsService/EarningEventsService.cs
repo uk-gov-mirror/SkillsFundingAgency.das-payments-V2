@@ -16,6 +16,7 @@ using Microsoft.ServiceFabric.Services.Remoting;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 using Microsoft.ServiceFabric.Services.Remoting.FabricTransport;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
+using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.ServiceFabric.Core;
 using StatelessService = Microsoft.ServiceFabric.Services.Runtime.StatelessService;
 
@@ -28,12 +29,14 @@ namespace SFA.DAS.Payments.EarningEvents.EarningEventsService
         private readonly ILifetimeScope lifetimeScope;
         private IJobContextManager<JobContextMessage> jobContextManager;
         private readonly IPaymentLogger logger;
+        private readonly ITelemetry telemetry;
 
-        public EarningEventsService(StatelessServiceContext context, ILifetimeScope lifetimeScope, IPaymentLogger logger)
+        public EarningEventsService(StatelessServiceContext context, ILifetimeScope lifetimeScope, IPaymentLogger logger, ITelemetry telemetry)
             : base(context)
         {
             this.lifetimeScope = lifetimeScope ?? throw new ArgumentNullException(nameof(lifetimeScope));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.telemetry = telemetry;
         }
 
         protected override IEnumerable<ServiceInstanceListener> CreateServiceInstanceListeners()
@@ -92,9 +95,21 @@ namespace SFA.DAS.Payments.EarningEvents.EarningEventsService
 
                                     if (!exception)
                                     {
-                                        logger.LogInfo($"{service.ServiceName}\n" +
-                                                     $"RANGED PARTITION: {partitionInformation.LowKey} - {partitionInformation.HighKey}\n" +
-                                                     $"{activeActors.Count} active actors out of {allActors.Count} actors");
+
+                                        telemetry.TrackEvent("Actors Partition Metric",
+                                            new Dictionary<string, string>
+                                            {
+                                                { "ServiceName", service.ServiceName.ToString()},
+                                                { "Partition LowKey", partitionInformation.LowKey.ToString()},
+                                                { "Partition HighKey", partitionInformation.HighKey.ToString()},
+                                                { "Active Actors Count", activeActors.Count.ToString()},
+                                                { "All Actors Count", allActors.Count.ToString()},
+                                            },
+                                            new Dictionary<string, double>());
+                                        
+                                        //logger.LogInfo($"{service.ServiceName}\n" +
+                                        //             $"RANGED PARTITION: {partitionInformation.LowKey} - {partitionInformation.HighKey}\n" +
+                                        //             $"{activeActors.Count} active actors out of {allActors.Count} actors");
                                     }
                                 }
                             }
