@@ -69,11 +69,13 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing
                             bulkCopy.ColumnMappings.Clear();
                             bulkCopy.DestinationTableName = data.Count > 1 ? table.TableName : dataTable.TableName;
                             bulkCopy.BulkCopyTimeout = 0;
-                            bulkCopy.BatchSize = batchSize;
+                            bulkCopy.BatchSize = table.Rows.Count;
+                         
 
                             foreach (DataRow tableRow in table.Rows)
                             {
-                                logger.LogVerbose($"Saving row to table: {bulkCopy.DestinationTableName}, Row: {ToLogString(tableRow)}");
+                                logger.LogVerbose(
+                                    $"Saving row to table: {bulkCopy.DestinationTableName}, Row: {ToLogString(tableRow)}");
                             }
 
                             foreach (DataColumn dataColumn in table.Columns)
@@ -99,13 +101,15 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing
                 }
                 catch (Exception e)
                 {
-                    logger.LogError($"Error performing bulk copy for model type: {typeof(T).Name}. Error: {e.Message}", e);
+                    logger.LogError($"Error performing bulk copy for model type: {typeof(T).Name}. Error: {e.Message}",
+                        e);
                     throw;
                 }
             }
 
             return batch.Count;
         }
+
 
         private async Task<int> TrySingleRecord(SqlBulkCopy bulkCopy, DataTable table, SqlConnection connection)
         {
