@@ -33,6 +33,14 @@ CREATE INDEX [IX_Job__Search] ON [Payments2].[Job]
 )
 GO
 
+
+CREATE INDEX [IX_Job__DcJobId] ON [Payments2].[Job]
+(
+	DCJobId
+)
+Include ([Status], JobId, Ukprn)
+GO
+
 CREATE INDEX IX_Payments2_Job__IlrSubmissionTime
 ON Payments2.Job (IlrSubmissionTime)
 GO
