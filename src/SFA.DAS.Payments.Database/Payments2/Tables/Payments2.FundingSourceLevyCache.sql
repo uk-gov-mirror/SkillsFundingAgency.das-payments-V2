@@ -12,25 +12,13 @@
 	EarningEventId UNIQUEIDENTIFIER NOT NULL,
 	EventTime DATETIMEOFFSET NOT NULL,
 	CreationDate DATETIMEOFFSET NOT NULL CONSTRAINT DF_FundingSourceLevyCache__CreationDate DEFAULT (SYSDATETIMEOFFSET()),
-	MessagePayload nvarchar(max) not null
+	Amount DECIMAL(15,5) NOT NULL,
+	MessagePayload nvarchar(max) not null,
+	MessageType nvarchar(max) not null
 )
 GO
 
-
-CREATE NONCLUSTERED INDEX [IX_FundingSourceLevyCache__Submission] ON [Payments2].[RequiredPaymentEvent] 
-([AcademicYear], [CollectionPeriod], [Ukprn], [IlrSubmissionDateTime]) 
+CREATE NONCLUSTERED INDEX [IX_FundingSourceLevyCache__PeriodEnd] ON [Payments2].[FundingSourceLevyCache] 
+([JobId], [AccountId], [TransferSenderAccountId]) include (Amount) 
 WITH (ONLINE = ON)
-GO
-
-Create NONCLUSTERED INDEX [IX_RequiredPaymentEvent__Metrics] ON [Payments2].[RequiredPaymentEvent] 
-(
-	Ukprn,
-	JobId,
-	NonPaymentReason
-) include (ContractType, TransactionType, Amount)
-Go
-
-CREATE INDEX IX_RequiredPaymentEvent__AcademicYear_CollectionPeriod_JobId
-ON Payments2.RequiredPaymentEvent (AcademicYear, CollectionPeriod, JobId)
-INCLUDE (EventId)
 GO
