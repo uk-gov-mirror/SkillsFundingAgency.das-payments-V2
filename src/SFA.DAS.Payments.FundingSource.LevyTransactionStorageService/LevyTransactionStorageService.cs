@@ -9,7 +9,7 @@ using SFA.DAS.Payments.ServiceFabric.Core;
 
 namespace SFA.DAS.Payments.FundingSource.LevyTransactionStorageService
 {
-    internal sealed class LevyTransactionStorageService : StatelessService
+    public class LevyTransactionStorageService : StatelessService
     {
         private readonly IPaymentLogger logger;
         private readonly ILifetimeScope lifetimeScope;
@@ -27,7 +27,7 @@ namespace SFA.DAS.Payments.FundingSource.LevyTransactionStorageService
             {
                 return new List<ServiceInstanceListener>
                 {
-                    new ServiceInstanceListener(context => lifetimeScope.Resolve<IServiceBusBatchCommunicationListener>())
+                    new ServiceInstanceListener(context => lifetimeScope.Resolve<IStatelessServiceBusBatchCommunicationListener>())
             };
             }
             catch (Exception e)

@@ -23,12 +23,12 @@ using SFA.DAS.Payments.ServiceFabric.Core.Infrastructure.UnitOfWork;
 
 namespace SFA.DAS.Payments.ServiceFabric.Core
 {
-    public interface IServiceBusBatchCommunicationListener : ICommunicationListener
+    public interface IStatelessServiceBusBatchCommunicationListener : ICommunicationListener
     {
         string EndpointName { get; set; }
     }
 
-    public class ServiceBusBatchCommunicationListener: IServiceBusBatchCommunicationListener
+    public class StatelessServiceBusBatchCommunicationListener: IStatelessServiceBusBatchCommunicationListener
     {
         //private readonly IApplicationConfiguration config;
         private readonly IPaymentLogger logger;
@@ -39,7 +39,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
         private readonly string errorQueueName;
         private CancellationToken startingCancellationToken;
 
-        public ServiceBusBatchCommunicationListener(string connectionString, string endpointName, string errorQueueName, IPaymentLogger logger,
+        public StatelessServiceBusBatchCommunicationListener(string connectionString, string endpointName, string errorQueueName, IPaymentLogger logger,
             IContainerScopeFactory scopeFactory, ITelemetry telemetry)
         {
             //this.config = config ?? throw new ArgumentNullException(nameof(config));
@@ -211,10 +211,10 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                 using (var containerScope = scopeFactory.CreateScope())
                 {
                     var stopwatch = Stopwatch.StartNew();
-                    var unitOfWork = containerScope.Resolve<IStateManagerUnitOfWork>();
-                    try
-                    {
-                        await unitOfWork.Begin().ConfigureAwait(false); 
+                    //var unitOfWork = containerScope.Resolve<IStateManagerUnitOfWork>();
+                    //try
+                    //{
+                        //await unitOfWork.Begin().ConfigureAwait(false); 
                         if (!containerScope.TryResolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType),
                             out object handler))
                         {
@@ -234,15 +234,15 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                         var handlerStopwatch = Stopwatch.StartNew();
                         await (Task)methodInfo.Invoke(handler, new object[] { list, cancellationToken });
                         RecordMetric(handler.GetType().FullName, handlerStopwatch.ElapsedMilliseconds, list.Count);
-                        await unitOfWork.End();
+                        //await unitOfWork.End();
                         await receiver.CompleteAsync(messages.Select(message =>
                             message.Item1));
-                    }
-                    catch (Exception e)
-                    {
-                        await unitOfWork.End(e);
-                        throw;
-                    }
+                    //}
+                    //catch (Exception e)
+                    //{
+                    //    await unitOfWork.End(e);
+                    //    throw;
+                    //}
                     RecordAllBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
                 }
             }

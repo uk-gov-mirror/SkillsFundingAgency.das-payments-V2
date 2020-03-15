@@ -5,6 +5,7 @@ using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.FundingSource.LevyTransactionStorageService.Handlers;
+using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 using SFA.DAS.Payments.ServiceFabric.Core;
 
 namespace SFA.DAS.Payments.FundingSource.LevyTransactionStorageService.Infrastructure.Ioc
@@ -17,18 +18,18 @@ namespace SFA.DAS.Payments.FundingSource.LevyTransactionStorageService.Infrastru
                 {
                     var appConfig = c.Resolve<IApplicationConfiguration>();
                     var configHelper = c.Resolve<IConfigurationHelper>();
-                    return new ServiceBusBatchCommunicationListener(configHelper.GetConnectionString("MonitoringServiceBusConnectionString"),
+                    return new StatelessServiceBusBatchCommunicationListener(configHelper.GetConnectionString("ServiceBusConnectionString"),
                         appConfig.EndpointName,
                         appConfig.FailedMessagesQueue,
                         c.Resolve<IPaymentLogger>(),
                         c.Resolve<IContainerScopeFactory>(),
                         c.Resolve<ITelemetry>());
                 })
-                .As<IServiceBusBatchCommunicationListener>()
+                .As<IStatelessServiceBusBatchCommunicationListener>()
                 .SingleInstance();
 
             builder.RegisterType<RecordLevyTransactionBatchHandler>()
-                .As<IHandleMessageBatches<RecordLevyTransactionBatchHandler>>()
+                .As<IHandleMessageBatches<CalculatedRequiredLevyAmount>>()
                 .InstancePerLifetimeScope();
         }
     }

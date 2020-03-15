@@ -282,3 +282,4 @@ src/SFA.DAS.Payments.AcceptanceTests.EndToEnd/App.Debug.config-das
 /src/SFA.DAS.Payments.DataLocks.DataLockProxyService.IntegrationTests/appsettings.development.json
 /src/NDependOut
 /src/SFA.DAS.Payments.ndproj
+src/SFA.DAS.Payments.FundingSource.PerformanceTests/appSettings.Debug.json

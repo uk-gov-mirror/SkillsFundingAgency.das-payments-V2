@@ -36,7 +36,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             try
             {
                 var partitionEndpointName = ((NamedPartitionInformation) Partition.PartitionInfo).Name;
-                var batchListener = lifetimeScope.Resolve<IServiceBusBatchCommunicationListener>();
+                var batchListener = lifetimeScope.Resolve<IStatefulServiceBusBatchCommunicationListener>();
                 batchListener.EndpointName += partitionEndpointName;
                 var serviceListener = new ServiceReplicaListener(context => batchListener);
                 return new List<ServiceReplicaListener>
