@@ -11,7 +11,7 @@ namespace SFA.DAS.Payments.FundingSource.Model
 		public byte DeliveryPeriod { get; set; }
 		public long JobId { get; set; }
 		public long AccountId { get; set; }
-		public long TransferSenderAccountId { get; set; }
+		public long? TransferSenderAccountId { get; set; }
 		public Guid RequiredPaymentEventId { get; set; }
 		public Guid EarningEventId { get; set; }
 		public decimal Amount { get; set; }

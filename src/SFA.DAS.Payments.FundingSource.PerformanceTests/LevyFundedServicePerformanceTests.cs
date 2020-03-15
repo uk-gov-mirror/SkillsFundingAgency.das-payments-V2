@@ -7,6 +7,7 @@ using NServiceBus;
 using NServiceBus.Features;
 using NUnit.Framework;
 using SFA.DAS.Payments.AcceptanceTests.Core.Infrastructure;
+using SFA.DAS.Payments.FundingSource.Application.Data;
 using SFA.DAS.Payments.Messages.Core;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.Entities;
@@ -21,6 +22,7 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
         private static EndpointConfiguration endpointConfiguration;
         private static IEndpointInstance endpointInstance;
         private static Config config;
+        private FundingSourceDataContext dataContext;
 
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
@@ -52,7 +54,12 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             endpointConfiguration.EnableInstallers();
             endpointConfiguration.SendOnly();
             endpointInstance = await Endpoint.Start(endpointConfiguration);
+        }
 
+        [SetUp]
+        public async Task SetUp()
+        {
+            var dataContext = new FundingSourceDataContext(config.ConnectionStrings.PaymentsConnectionString);
         }
 
         private static IConfigurationRoot BuildConfiguration()
@@ -65,10 +72,13 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
         }
 
         [TestCase(100)]
+        [TestCase(1000)]
         public async Task Batch_For_Same_Employer(int batchSize)
         {
             var options = new NServiceBus.SendOptions();
-            options.DelayDeliveryWith(TimeSpan.FromSeconds(10));
+            var visibleTime = DateTime.UtcNow.AddSeconds(10);
+            Console.WriteLine($"Messages visible at {visibleTime:G}");
+            options.DoNotDeliverBefore(visibleTime);
             var messages = Enumerable.Range(0, batchSize).Select(i =>
                 new CalculatedRequiredLevyAmount
                 {
@@ -90,6 +100,7 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
                 await endpointInstance.Send(calculatedRequiredLevyAmount, options).ConfigureAwait(false);
             }
             Console.WriteLine($"Sent {batchSize} messages");
+            
         }
 
 
