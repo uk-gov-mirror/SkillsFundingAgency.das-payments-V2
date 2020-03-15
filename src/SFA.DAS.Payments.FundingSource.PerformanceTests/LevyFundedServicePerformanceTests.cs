@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -63,29 +64,32 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             return builder.Build();
         }
 
-        [Test]
-        public async Task Test()
+        [TestCase(100)]
+        public async Task Batch_For_Same_Employer(int batchSize)
         {
             var options = new NServiceBus.SendOptions();
-            options.DelayDeliveryWith(TimeSpan.FromSeconds(5));
-            for (var i = 0; i < 100; i++)
-            {
-                await endpointInstance.Send(new CalculatedRequiredLevyAmount
+            options.DelayDeliveryWith(TimeSpan.FromSeconds(10));
+            var messages = Enumerable.Range(0, batchSize).Select(i =>
+                new CalculatedRequiredLevyAmount
                 {
                     AmountDue = 100,
                     ContractType = ContractType.Act1,
-                    CollectionPeriod = new CollectionPeriod { Period = 1, AcademicYear = 1920 },
+                    CollectionPeriod = new CollectionPeriod {Period = 1, AcademicYear = 1920},
                     DeliveryPeriod = 1,
                     JobId = 9990999,
                     Ukprn = 100003915,
                     AccountId = 999,
                     SfaContributionPercentage = .95M,
                     EarningEventId = Guid.NewGuid(),
-                    Learner = new Learner { Uln = 99999 },
+                    Learner = new Learner {Uln = 99999},
                     OnProgrammeEarningType = OnProgrammeEarningType.Learning,
                     TransferSenderAccountId = 999
-                }, options).ConfigureAwait(false);
+                }).ToList();
+            foreach (var calculatedRequiredLevyAmount in messages)
+            {
+                await endpointInstance.Send(calculatedRequiredLevyAmount, options).ConfigureAwait(false);
             }
+            Console.WriteLine($"Sent {batchSize} messages");
         }
 
 
