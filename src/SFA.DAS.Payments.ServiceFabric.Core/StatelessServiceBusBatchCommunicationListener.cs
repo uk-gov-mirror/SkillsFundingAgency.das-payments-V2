@@ -31,7 +31,6 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
 
     public class StatelessServiceBusBatchCommunicationListener : IStatelessServiceBusBatchCommunicationListener
     {
-        //private readonly IApplicationConfiguration config;
         private readonly IPaymentLogger logger;
         private readonly IContainerScopeFactory scopeFactory;
         private readonly ITelemetry telemetry;
@@ -43,7 +42,6 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
         public StatelessServiceBusBatchCommunicationListener(string connectionString, string endpointName, string errorQueueName, IPaymentLogger logger,
             IContainerScopeFactory scopeFactory, ITelemetry telemetry)
         {
-            //this.config = config ?? throw new ArgumentNullException(nameof(config));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
             this.telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
@@ -105,7 +103,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
         {
             var connection = new ServiceBusConnection(connectionString);
             var messageReceivers = new List<BatchMessageReceiver>();
-            messageReceivers.AddRange(Enumerable.Range(0, 1)
+            messageReceivers.AddRange(Enumerable.Range(0, 3)
                 .Select(i => new BatchMessageReceiver(connection, EndpointName)));
             var errorQueueSender = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
             try
