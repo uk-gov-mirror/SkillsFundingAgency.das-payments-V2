@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections;
+using System.Data;
+using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using NServiceBus;
 using NServiceBus.Features;
@@ -23,6 +27,7 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
         private static IEndpointInstance endpointInstance;
         private static Config config;
         private FundingSourceDataContext dataContext;
+        private static readonly int jobId = 9990999;
 
         [OneTimeSetUp]
         public async Task OneTimeSetUp()
@@ -59,7 +64,14 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
         [SetUp]
         public async Task SetUp()
         {
-            var dataContext = new FundingSourceDataContext(config.ConnectionStrings.PaymentsConnectionString);
+            dataContext = new FundingSourceDataContext(config.ConnectionStrings.PaymentsConnectionString);
+            await dataContext.Database.ExecuteSqlCommandAsync($"Delete from [Payments2].[FundingSourceLevyTransaction] where JobId = {jobId}");
+        }
+
+        [TearDown]
+        public void ClearDown()
+        {
+            dataContext?.Dispose();
         }
 
         private static IConfigurationRoot BuildConfiguration()
@@ -71,12 +83,40 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             return builder.Build();
         }
 
-        [TestCase(100)]
-        [TestCase(1000)]
-        public async Task Batch_For_Same_Employer(int batchSize)
+        [TestCase(100, 10)]
+        [TestCase(1000, 60)]
+        public async Task Batch_For_Same_Employer(int batchSize, int delayInSeconds)
         {
+            var visibleTime = DateTime.UtcNow.AddSeconds(delayInSeconds);
+            await SendMessages(batchSize, visibleTime).ConfigureAwait(false);
+            var endTime = DateTime.Now.Add(config.AppSettings.TimeToWait);
+            Console.WriteLine($"Waiting until {endTime:G} for Levy Service To finish storing transactions.");
+            while (DateTime.Now < endTime)
+            {
+                var storedCount = await GetStoredCount().ConfigureAwait(false);
+                Console.WriteLine($"Stored Count {storedCount}");
+                if (storedCount == batchSize)
+                {
+                    var creationTimeParam = new SqlParameter("@creationDate", SqlDbType.DateTimeOffset)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    await dataContext.Database.ExecuteSqlCommandAsync($"Select @creationDate = Max(CreationDate) from  [Payments2].[FundingSourceLevyTransaction]with (NOLOCK) where JobId = {jobId}", creationTimeParam);
+                    var creationTime = (DateTimeOffset)creationTimeParam.Value;
+                    Console.WriteLine($"Last creation time was {creationTime:G}");
+                    var executionTime = creationTime - visibleTime;
+                    Console.WriteLine($"Took: {executionTime.TotalSeconds} seconds to store {batchSize} levy transactions");
+                    Assert.Pass();
+                }
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+            Assert.Fail("Failed to store all messages.");
+        }
+
+        private async Task SendMessages(int batchSize, DateTimeOffset visibleTime)
+        {
+            var stopwatch = Stopwatch.StartNew();
             var options = new NServiceBus.SendOptions();
-            var visibleTime = DateTime.UtcNow.AddSeconds(10);
             Console.WriteLine($"Messages visible at {visibleTime:G}");
             options.DoNotDeliverBefore(visibleTime);
             var messages = Enumerable.Range(0, batchSize).Select(i =>
@@ -84,14 +124,14 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
                 {
                     AmountDue = 100,
                     ContractType = ContractType.Act1,
-                    CollectionPeriod = new CollectionPeriod {Period = 1, AcademicYear = 1920},
+                    CollectionPeriod = new CollectionPeriod { Period = 1, AcademicYear = 1920 },
                     DeliveryPeriod = 1,
-                    JobId = 9990999,
+                    JobId = jobId,
                     Ukprn = 100003915,
                     AccountId = 999,
                     SfaContributionPercentage = .95M,
                     EarningEventId = Guid.NewGuid(),
-                    Learner = new Learner {Uln = 99999},
+                    Learner = new Learner { Uln = 99999 },
                     OnProgrammeEarningType = OnProgrammeEarningType.Learning,
                     TransferSenderAccountId = 999
                 }).ToList();
@@ -99,8 +139,22 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             {
                 await endpointInstance.Send(calculatedRequiredLevyAmount, options).ConfigureAwait(false);
             }
-            Console.WriteLine($"Sent {batchSize} messages");
-            
+            Console.WriteLine($"Sent {batchSize} messages at {DateTime.Now:G}.  Took: {stopwatch.ElapsedMilliseconds}ms");
+
+        }
+
+        private async Task<int> GetStoredCount()
+        {
+            using var tx = dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            try
+            {
+                return dataContext.LevyTransactions.Count(levyTransaction => levyTransaction.JobId == jobId);
+            }
+            catch (Exception)
+            {
+                await Task.Delay(500).ConfigureAwait(false);
+                return dataContext.LevyTransactions.Count(levyTransaction => levyTransaction.JobId == jobId);
+            }
         }
 
 
