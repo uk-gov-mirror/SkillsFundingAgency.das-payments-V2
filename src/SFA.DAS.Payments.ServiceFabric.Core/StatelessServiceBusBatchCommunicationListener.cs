@@ -29,16 +29,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
         string EndpointName { get; set; }
     }
 
-    public class BatchMessageReceiver 
-    {
-        public BatchMessageReceiver()
-        {
-
-        }
-
-    }
-
-    public class StatelessServiceBusBatchCommunicationListener: IStatelessServiceBusBatchCommunicationListener
+    public class StatelessServiceBusBatchCommunicationListener : IStatelessServiceBusBatchCommunicationListener
     {
         //private readonly IApplicationConfiguration config;
         private readonly IPaymentLogger logger;
@@ -58,7 +49,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             this.telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
             this.connectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
             EndpointName = endpointName ?? throw new ArgumentNullException(nameof(endpointName));
-            this.errorQueueName = errorQueueName ?? endpointName+"-Errors";
+            this.errorQueueName = errorQueueName ?? endpointName + "-Errors";
         }
 
         public Task<string> OpenAsync(CancellationToken cancellationToken)
@@ -74,12 +65,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             await EnsureQueue(errorQueueName).ConfigureAwait(false);
             try
             {
-                //TODO: allow config to determine number of listeners
-                await Task.WhenAll(
-                    Listen(cancellationToken),
-                    Listen(cancellationToken),
-                    Listen(cancellationToken)
-                    );
+                await Listen(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -87,11 +73,40 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             }
         }
 
+        private async Task<List<(Object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>> ReceiveMessages(BatchMessageReceiver messageReceiver, CancellationToken cancellationToken)
+        {
+            var applicationMessages = new List<(Object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>();
+            var messages = await messageReceiver.ReceiveMessages(200, cancellationToken).ConfigureAwait(false);
+            if (!messages.Any())
+                return applicationMessages;
+
+
+            foreach (var message in messages)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    var applicationMessage = DeserializeMessage(message);
+                    applicationMessages.Add((applicationMessage, messageReceiver, message));
+                }
+                catch (Exception e)
+                {
+                    logger.LogError($"Error deserialising the message. Error: {e.Message}", e);
+                    //TODO: should use the error queue instead of dead letter queue
+                    await messageReceiver.DeadLetter(message)
+                        .ConfigureAwait(false);
+                }
+            }
+
+            return applicationMessages;
+        }
+
         private async Task Listen(CancellationToken cancellationToken)
         {
             var connection = new ServiceBusConnection(connectionString);
-            var messageReceiver = new MessageReceiver(connection, EndpointName, ReceiveMode.PeekLock,
-                RetryPolicy.Default, 0);
+            var messageReceivers = new List<BatchMessageReceiver>();
+            messageReceivers.AddRange(Enumerable.Range(0, 1)
+                .Select(i => new BatchMessageReceiver(connection, EndpointName)));
             var errorQueueSender = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
             try
             {
@@ -100,16 +115,13 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                     try
                     {
                         var pipeLineStopwatch = Stopwatch.StartNew();
-                        var messages = new List<Message>();
-                        for (var i = 0; i < 10 && messages.Count <= 200; i++)
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            var receivedMessages = await messageReceiver.ReceiveAsync(200, TimeSpan.FromSeconds(2))
-                                .ConfigureAwait(false);
-                            if (receivedMessages == null || !receivedMessages.Any())
-                                break;
-                            messages.AddRange(receivedMessages);
-                        }
+
+                        var receiveTasks =
+                            messageReceivers.Select(receiver => ReceiveMessages(receiver, cancellationToken)).ToList();
+                        await Task.WhenAll(receiveTasks).ConfigureAwait(false);
+
+                        var messages = new List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)>();
+                        messages.AddRange(receiveTasks.SelectMany(task => task.Result));
 
                         if (!messages.Any())
                         {
@@ -117,32 +129,20 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                             continue;
                         }
 
-                        var groupedMessages = new Dictionary<Type, List<(string, object)>>();
+                        var groupedMessages = new Dictionary<Type, List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)>>();
                         foreach (var message in messages)
                         {
                             cancellationToken.ThrowIfCancellationRequested();
-                            try
-                            {
-                                var applicationMessage = DeserializeMessage(message);
-                                var key = applicationMessage.GetType();
-                                var applicationMessages = groupedMessages.ContainsKey(key)
-                                    ? groupedMessages[key]
-                                    : groupedMessages[key] = new List<(string, object)>();
-                                applicationMessages.Add((message.SystemProperties.LockToken, applicationMessage));
-
-                            }
-                            catch (Exception e)
-                            {
-                                logger.LogError($"Error deserialising the message. Error: {e.Message}", e);
-                                //TODO: should use the error queue instead of dead letter queue
-                                await messageReceiver.DeadLetterAsync(message.SystemProperties.LockToken)
-                                    .ConfigureAwait(false);
-                            }
+                            var key = message.Message.GetType();
+                            var applicationMessages = groupedMessages.ContainsKey(key)
+                                ? groupedMessages[key]
+                                : groupedMessages[key] = new List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)>();
+                            applicationMessages.Add(message);
                         }
 
                         var stopwatch = Stopwatch.StartNew();
                         await Task.WhenAll(groupedMessages.Select(group =>
-                            ProcessMessages(group.Key, group.Value, messageReceiver, cancellationToken)));
+                            ProcessMessages(group.Key, group.Value, cancellationToken)));
                         stopwatch.Stop();
                         //RecordAllBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
                         pipeLineStopwatch.Stop();
@@ -167,8 +167,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             }
             finally
             {
-                if (!messageReceiver.IsClosedOrClosing)
-                    await messageReceiver.CloseAsync();
+                await Task.WhenAll(messageReceivers.Select(receiver => receiver.Close())).ConfigureAwait(false);
                 if (!connection.IsClosedOrClosing)
                     await connection.CloseAsync();
             }
@@ -213,7 +212,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             return deserialisedMessage;
         }
 
-        protected async Task ProcessMessages(Type groupType, List<(string, object)> messages, MessageReceiver receiver,
+        protected async Task ProcessMessages(Type groupType, List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)> messages,
             CancellationToken cancellationToken)
         {
             try
@@ -221,45 +220,37 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                 using (var containerScope = scopeFactory.CreateScope())
                 {
                     var stopwatch = Stopwatch.StartNew();
-                    //var unitOfWork = containerScope.Resolve<IStateManagerUnitOfWork>();
-                    //try
-                    //{
-                        //await unitOfWork.Begin().ConfigureAwait(false); 
-                        if (!containerScope.TryResolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType),
-                            out object handler))
-                        {
-                            logger.LogError($"No handler found for message: {groupType.FullName}");
-                            await Task.WhenAll(messages.Select(message => receiver.DeadLetterAsync(message.Item1)));
-                            return;
-                        }
+                    if (!containerScope.TryResolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType),
+                        out object handler))
+                    {
+                        logger.LogError($"No handler found for message: {groupType.FullName}");
+                        await Task.WhenAll(messages.Select(message => message.MessageReceiver.DeadLetter(message.ReceivedMessage)));
+                        return;
+                    }
 
-                        var methodInfo = handler.GetType().GetMethod("Handle");
-                        if (methodInfo == null)
-                            throw new InvalidOperationException($"Handle method not found on handler: {handler.GetType().Name} for message type: {groupType.FullName}");
+                    var methodInfo = handler.GetType().GetMethod("Handle");
+                    if (methodInfo == null)
+                        throw new InvalidOperationException($"Handle method not found on handler: {handler.GetType().Name} for message type: {groupType.FullName}");
 
-                        var listType = typeof(List<>).MakeGenericType(groupType);
-                        var list = (IList)Activator.CreateInstance(listType);
-                        messages.Select(msg => msg.Item2).ToList().ForEach(message => list.Add(message));
+                    var listType = typeof(List<>).MakeGenericType(groupType);
+                    var list = (IList)Activator.CreateInstance(listType);
+                    messages.Select(msg => msg.Message).ToList().ForEach(message => list.Add(message));
 
-                        var handlerStopwatch = Stopwatch.StartNew();
-                        await (Task)methodInfo.Invoke(handler, new object[] { list, cancellationToken });
-                        RecordMetric(handler.GetType().FullName, handlerStopwatch.ElapsedMilliseconds, list.Count);
-                        //await unitOfWork.End();
-                        await receiver.CompleteAsync(messages.Select(message =>
-                            message.Item1));
-                    //}
-                    //catch (Exception e)
-                    //{
-                    //    await unitOfWork.End(e);
-                    //    throw;
-                    //}
+                    var handlerStopwatch = Stopwatch.StartNew();
+                    await (Task)methodInfo.Invoke(handler, new object[] { list, cancellationToken });
+                    RecordMetric(handler.GetType().FullName, handlerStopwatch.ElapsedMilliseconds, list.Count);
+                    await Task.WhenAll(messages.GroupBy(msg => msg.MessageReceiver).Select(group =>
+                        group.Key.Complete(group.Select(msg => msg.ReceivedMessage.SystemProperties.LockToken)))).ConfigureAwait(false);
                     RecordAllBatchProcessTelemetry(stopwatch.ElapsedMilliseconds, messages.Count);
                 }
             }
             catch (Exception e)
             {
                 logger.LogError($"Error processing messages. Error: {e.Message}", e);
-                await Task.WhenAll(messages.Select(message => receiver.AbandonAsync(message.Item1)));
+                await Task.WhenAll(messages.GroupBy(msg => msg.MessageReceiver).Select(group =>
+                        group.Key.Abandon(group.Select(msg => msg.ReceivedMessage.SystemProperties.LockToken)
+                            .ToList())))
+                    .ConfigureAwait(false);
             }
         }
 
@@ -305,7 +296,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                     logger.LogInfo($"Queue '{queuePath}' already exists, skipping queue creation.");
                     return;
                 }
-                  
+
                 logger.LogInfo($"Creating queue '{queuePath}' with properties: TimeToLive: 7 days, Lock Duration: 5 Minutes, Max Delivery Count: 50, Max Size: 5Gb.");
                 var queueDescription = new QueueDescription(queuePath)
                 {
