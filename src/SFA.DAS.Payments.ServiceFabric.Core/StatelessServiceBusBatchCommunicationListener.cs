@@ -23,9 +23,19 @@ using SFA.DAS.Payments.ServiceFabric.Core.Infrastructure.UnitOfWork;
 
 namespace SFA.DAS.Payments.ServiceFabric.Core
 {
+
     public interface IStatelessServiceBusBatchCommunicationListener : ICommunicationListener
     {
         string EndpointName { get; set; }
+    }
+
+    public class BatchMessageReceiver 
+    {
+        public BatchMessageReceiver()
+        {
+
+        }
+
     }
 
     public class StatelessServiceBusBatchCommunicationListener: IStatelessServiceBusBatchCommunicationListener
