@@ -9,7 +9,7 @@ using SFA.DAS.Payments.FundingSource.Application.Data;
 using SFA.DAS.Payments.FundingSource.Model;
 using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 
-namespace SFA.DAS.Payments.FundingSource.Application.LevyTransactionStorage
+namespace SFA.DAS.Payments.FundingSource.Application.LevyTransaction
 {
     public interface ILevyTransactionBatchStorageService
     {
@@ -19,13 +19,22 @@ namespace SFA.DAS.Payments.FundingSource.Application.LevyTransactionStorage
     public class LevyTransactionBatchStorageService : ILevyTransactionBatchStorageService
     {
         private readonly IPaymentLogger logger;
+
         private readonly IFundingSourceDataContext dataContext;
+        //private readonly IFundingSourceBulkInsert bulkInsert;
 
         public LevyTransactionBatchStorageService(IPaymentLogger logger, IFundingSourceDataContext dataContext)
         {
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
         }
+
+        //public LevyTransactionBatchStorageService(IPaymentLogger logger, IFundingSourceBulkInsert bulkInsert)
+        //{
+        //    this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        //    //this.dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+        //    this.bulkInsert = bulkInsert ?? throw new ArgumentNullException(nameof(bulkInsert));
+        //}
 
         public async Task StoreLevyTransactions(IList<CalculatedRequiredLevyAmount> levyTransactions, CancellationToken cancellationToken)
         {
@@ -45,10 +54,12 @@ namespace SFA.DAS.Payments.FundingSource.Application.LevyTransactionStorage
                 TransferSenderAccountId = levyTransaction.TransferSenderAccountId,
                 MessagePayload = levyTransaction.ToJson(),
                 MessageType = levyTransaction.GetType().FullName
-            });
+            }).ToList();
             cancellationToken.ThrowIfCancellationRequested();
             await dataContext.LevyTransactions.AddRangeAsync(models, cancellationToken).ConfigureAwait(false);
             await dataContext.SaveChanges(cancellationToken);
+
+            //await bulkInsert.Insert(models).ConfigureAwait(false);
             logger.LogInfo($"Saved {levyTransactions.Count} levy transactions to db.");
         }
     }

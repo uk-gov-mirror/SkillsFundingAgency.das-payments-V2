@@ -5,6 +5,8 @@ using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using NServiceBus;
@@ -83,13 +85,43 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             return builder.Build();
         }
 
-        [TestCase(100, 10)]
-        [TestCase(1000, 60)]
-        public async Task Batch_For_Same_Employer(int batchSize, int delayInSeconds)
+        [TestCase(100, 10, 1)]
+        [TestCase(100, 10, 2)]
+        [TestCase(100, 10, 3)]
+        [TestCase(100, 10, 4)]
+        [TestCase(100, 10, 5)]
+        [TestCase(100, 10, 6)]
+        [TestCase(100, 10, 7)]
+        [TestCase(100, 10, 8)]
+        [TestCase(100, 10, 9)]
+        [TestCase(100, 10, 10)]
+        [TestCase(500, 30, 1)]
+        [TestCase(500, 30, 2)]
+        [TestCase(500, 30, 3)]
+        [TestCase(500, 30, 4)]
+        [TestCase(500, 30, 5)]
+        [TestCase(500, 30, 6)]
+        [TestCase(500, 30, 7)]
+        [TestCase(500, 30, 8)]
+        [TestCase(500, 30, 9)]
+        [TestCase(500, 30, 10)]
+        [TestCase(1000, 60, 1)]
+        [TestCase(1000, 60, 2)]
+        [TestCase(1000, 60, 3)]
+        [TestCase(1000, 60, 4)]
+        [TestCase(1000, 60, 5)]
+        [TestCase(1000, 60, 6)]
+        [TestCase(1000, 60, 7)]
+        [TestCase(1000, 60, 8)]
+        [TestCase(1000, 60, 9)]
+        [TestCase(1000, 60, 10)]
+        //[TestCase(10000, 120, 1)]
+        public async Task Batch_For_Same_Employer(int batchSize, int delayInSeconds, int testIndex)
         {
+            Console.WriteLine($"Test: #{testIndex}, batch size: {batchSize}");
             var visibleTime = DateTime.UtcNow.AddSeconds(delayInSeconds);
             await SendMessages(batchSize, visibleTime).ConfigureAwait(false);
-            var endTime = DateTime.Now.Add(config.AppSettings.TimeToWait);
+            var endTime = visibleTime.Add(config.AppSettings.TimeToWait);
             Console.WriteLine($"Waiting until {endTime:G} for Levy Service To finish storing transactions.");
             while (DateTime.Now < endTime)
             {
@@ -111,6 +143,63 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
                 await Task.Delay(TimeSpan.FromSeconds(10));
             }
             Assert.Fail("Failed to store all messages.");
+        }
+
+        [TestCase(100, 10, 1)]
+        [TestCase(100, 10, 2)]
+        [TestCase(100, 10, 3)]
+        [TestCase(100, 10, 4)]
+        [TestCase(100, 10, 5)]
+        [TestCase(100, 10, 6)]
+        [TestCase(100, 10, 7)]
+        [TestCase(100, 10, 8)]
+        [TestCase(100, 10, 9)]
+        [TestCase(100, 10, 10)]
+        [TestCase(500, 30, 1)]
+        [TestCase(500, 30, 2)]
+        [TestCase(500, 30, 3)]
+        [TestCase(500, 30, 4)]
+        [TestCase(500, 30, 5)]
+        [TestCase(500, 30, 6)]
+        [TestCase(500, 30, 7)]
+        [TestCase(500, 30, 8)]
+        [TestCase(500, 30, 9)]
+        [TestCase(500, 30, 10)]
+        [TestCase(1000, 60, 1)]
+        [TestCase(1000, 60, 2)]
+        [TestCase(1000, 60, 3)]
+        [TestCase(1000, 60, 4)]
+        [TestCase(1000, 60, 5)]
+        [TestCase(1000, 60, 6)]
+        [TestCase(1000, 60, 7)]
+        [TestCase(1000, 60, 8)]
+        [TestCase(1000, 60, 9)]
+        [TestCase(1000, 60, 10)]
+        public async Task Time_To_Clear_Queue(int batchSize, int delayInSeconds, int testIndex)
+        {
+            Console.WriteLine($"Test: #{testIndex}, batch size: {batchSize}");
+            var visibleTime = DateTime.UtcNow.AddSeconds(delayInSeconds);
+            await SendMessages(batchSize, visibleTime).ConfigureAwait(false);
+            var endTime = visibleTime.Add(config.AppSettings.TimeToWait);
+            Console.WriteLine($"Waiting until {endTime:G} for Levy Service To finish storing transactions.");
+
+            var connection = new ServiceBusConnection(config.ConnectionStrings.ServiceBusConnectionString);
+            var client = new ManagementClient(config.ConnectionStrings.ServiceBusConnectionString);
+
+            while (DateTime.Now < endTime)
+            {
+                var queueInfo = await client.GetQueueRuntimeInfoAsync(config.AppSettings.LevyEndPoint)
+                    .ConfigureAwait(false);
+                Console.WriteLine($"Queue count: {queueInfo.MessageCount}, Active messages: {queueInfo.MessageCountDetails.ActiveMessageCount}, Dead letter: {queueInfo.MessageCountDetails.DeadLetterMessageCount}");
+                if (DateTime.UtcNow > visibleTime && queueInfo.MessageCount == 0 )
+                {
+                    var executionTime = DateTime.UtcNow - visibleTime;
+                    Console.WriteLine($"Took: {executionTime.TotalSeconds} seconds to clear {batchSize} levy transactions");
+                    Assert.Pass();
+                }
+                await Task.Delay(TimeSpan.FromMilliseconds(500));
+            }
+            Assert.Fail("Failed to process all messages.");
         }
 
         private async Task SendMessages(int batchSize, DateTimeOffset visibleTime)

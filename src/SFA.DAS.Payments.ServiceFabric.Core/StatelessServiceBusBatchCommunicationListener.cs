@@ -74,10 +74,9 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
         private async Task<List<(Object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>> ReceiveMessages(BatchMessageReceiver messageReceiver, CancellationToken cancellationToken)
         {
             var applicationMessages = new List<(Object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>();
-            var messages = await messageReceiver.ReceiveMessages(200, cancellationToken).ConfigureAwait(false);
+            var messages = await messageReceiver.ReceiveMessages(500, cancellationToken).ConfigureAwait(false);
             if (!messages.Any())
                 return applicationMessages;
-
 
             foreach (var message in messages)
             {
@@ -113,6 +112,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                     try
                     {
                         var pipeLineStopwatch = Stopwatch.StartNew();
+                        var receiveTimer = Stopwatch.StartNew();
 
                         var receiveTasks =
                             messageReceivers.Select(receiver => ReceiveMessages(receiver, cancellationToken)).ToList();
@@ -123,9 +123,11 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
 
                         if (!messages.Any())
                         {
-                            await Task.Delay(2000, cancellationToken);
+                            await Task.Delay(1000, cancellationToken);
                             continue;
                         }
+                        receiveTimer.Stop();
+                        RecordMetric("StatelessServiceBusBatchCommunicationListener.ReceiveMessages", receiveTimer.ElapsedMilliseconds, messages.Count);
 
                         var groupedMessages = new Dictionary<Type, List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)>>();
                         foreach (var message in messages)

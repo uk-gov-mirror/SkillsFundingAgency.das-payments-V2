@@ -15,11 +15,10 @@
     <Parameter Name="LogLevel" DefaultValue="Information" />
     <Parameter Name="ConsoleLogLevel" DefaultValue="" />
     <Parameter Name="ProcessMessageSequentially" DefaultValue="false" />
-    <Parameter Name="NonLevyFundedService_EndpointName" DefaultValue="sfa-das-payments-fundingsource-nonlevy" />
     <Parameter Name="LevyFundedService_EndpointName" DefaultValue="sfa-das-payments-fundingsource-levy" />
-    <Parameter Name="NonLevyFundedService_FailedMessagesQueue" DefaultValue="sfa-das-payments-fundingsource-nonlevy-error" />
-    <Parameter Name="ApplicationInsightsInstrumentationKey" DefaultValue="" />
     <Parameter Name="LevyFundedService_FailedMessagesQueue" DefaultValue="sfa-das-payments-fundingsource-levy-errors" />
+    <Parameter Name="NonLevyFundedService_EndpointName" DefaultValue="sfa-das-payments-fundingsource-nonlevy" />
+    <Parameter Name="NonLevyFundedService_FailedMessagesQueue" DefaultValue="sfa-das-payments-fundingsource-nonlevy-error" />
     <Parameter Name="LevyFundedServiceActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="LevyFundedServiceActorService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="LevyFundedServiceActorService_TargetReplicaSetSize" DefaultValue="3" />
@@ -37,6 +36,7 @@
     <Parameter Name="ImmediateMessageRetries" DefaultValue="1" />
     <Parameter Name="DelayedMessageRetries" DefaultValue="3" />
     <Parameter Name="DelayedMessageRetryDelay" DefaultValue="00:00:10" />
+    <Parameter Name="ApplicationInsightsInstrumentationKey" DefaultValue="" />
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 

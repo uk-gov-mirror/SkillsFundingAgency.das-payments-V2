@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Application.Messaging;
-using SFA.DAS.Payments.FundingSource.Application.LevyTransactionStorage;
+using SFA.DAS.Payments.FundingSource.Application.LevyTransaction;
 using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 
 namespace SFA.DAS.Payments.FundingSource.LevyTransactionStorageService.Handlers

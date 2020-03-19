@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SFA.DAS.Payments.FundingSource.Application.Data.Configurations;
@@ -13,6 +15,7 @@ namespace SFA.DAS.Payments.FundingSource.Application.Data
         DbSet<EmployerProviderPriorityModel> EmployerProviderPriorities { get; }
         DbSet<LevyTransactionModel> LevyTransactions { get; }
         Task<int> SaveChanges(CancellationToken cancellationToken);
+        Task<List<LevyTransactionModel>> GetEmployerLevyTransactions(long employerAccountId);
     }
 
     public class FundingSourceDataContext : DbContext, IFundingSourceDataContext
@@ -44,6 +47,13 @@ namespace SFA.DAS.Payments.FundingSource.Application.Data
         {
             if (connectionString != null)
                 optionsBuilder.UseSqlServer(connectionString);
+        }
+
+        public async Task<List<LevyTransactionModel>> GetEmployerLevyTransactions(long employerAccountId)
+        {
+
+            return await LevyTransactions.Where(transaction => transaction.AccountId == employerAccountId)
+                .ToListAsync();
         }
     }
 }

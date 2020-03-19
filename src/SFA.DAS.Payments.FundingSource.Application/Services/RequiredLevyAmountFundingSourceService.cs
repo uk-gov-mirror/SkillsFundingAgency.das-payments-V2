@@ -19,7 +19,6 @@ using SFA.DAS.Payments.FundingSource.Messages.Events;
 using SFA.DAS.Payments.Model.Core.Entities;
 using SFA.DAS.Payments.DataLocks.Messages.Events;
 using SFA.DAS.Payments.FundingSource.Model;
-using SFA.DAS.Payments.Model.Core;
 
 namespace SFA.DAS.Payments.FundingSource.Application.Services
 {
@@ -159,7 +158,7 @@ namespace SFA.DAS.Payments.FundingSource.Application.Services
             return payments.AsReadOnly();
         }
 
-        public async Task<ReadOnlyCollection<FundingSourcePaymentEvent>> HandleMonthEnd(long employerAccountId, long jobId)
+        public async Task<ReadOnlyCollection<FundingSourcePaymentEvent>>  HandleMonthEnd(long employerAccountId, long jobId)
         {
             var fundingSourceEvents = new List<FundingSourcePaymentEvent>();
 

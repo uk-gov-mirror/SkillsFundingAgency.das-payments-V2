@@ -14,9 +14,8 @@ using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Application.Repositories;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.FundingSource.Application.Data;
-using SFA.DAS.Payments.FundingSource.Application.LevyTransactionStorage;
+using SFA.DAS.Payments.FundingSource.Application.LevyTransaction;
 using SFA.DAS.Payments.FundingSource.Application.Repositories;
-using SFA.DAS.Payments.Model.Core.Entities;
 using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 using SFA.DAS.Payments.ServiceFabric.Core.Infrastructure.Cache;
 
@@ -96,11 +95,24 @@ namespace SFA.DAS.Payments.FundingSource.Application.Infrastructure.Ioc
 
             builder.RegisterType<LevyTransactionBatchStorageService>().AsImplementedInterfaces()
                 .InstancePerLifetimeScope();
+
+            builder.RegisterType<LevyTransactionFundingSourceService>()
+                .As<ILevyTransactionFundingSourceService>()
+                .InstancePerLifetimeScope();
+
             builder.Register((c, p) =>
             {
                 var config = c.Resolve<IConfigurationHelper>();
                 return new FundingSourceDataContext(config.GetConnectionString("PaymentsConnectionString"));
             }).As<IFundingSourceDataContext>();
+
+            builder.Register((c, p) =>
+                {
+                    var config = c.Resolve<IConfigurationHelper>();
+                    return new FundingSourceBulkInsert(config.GetConnectionString("PaymentsConnectionString"));
+                })
+                .As<IFundingSourceBulkInsert>();
+
 
             builder.RegisterServiceFabricSupport();
         }
@@ -131,8 +143,6 @@ namespace SFA.DAS.Payments.FundingSource.Application.Infrastructure.Ioc
             endpointConfiguration.EnableInstallers();
             endpointConfiguration.EnableCallbacks(makesRequests: false);
             return endpointConfiguration;
-
         }
-
     }
 }
