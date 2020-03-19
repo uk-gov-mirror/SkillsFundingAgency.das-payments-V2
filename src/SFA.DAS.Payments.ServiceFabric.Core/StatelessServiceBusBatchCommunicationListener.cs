@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -206,7 +207,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             var typeName = enclosedTypes.Split(';').FirstOrDefault();
             if (string.IsNullOrEmpty(typeName))
                 throw new InvalidOperationException($"Message type not found when trying to deserialise the message.  Message id: {message.MessageId}, label: {message.Label}");
-            var messageType = Type.GetType(typeName);
+            var messageType = Type.GetType(typeName, assemblyName => { assemblyName.Version = null; return Assembly.Load(assemblyName); },null );
             var sanitisedMessageJson = GetMessagePayload(message);
             var deserialisedMessage = JsonConvert.DeserializeObject(sanitisedMessageJson, messageType);
             return deserialisedMessage;
