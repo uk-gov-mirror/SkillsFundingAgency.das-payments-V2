@@ -56,8 +56,8 @@ namespace SFA.DAS.Payments.FundingSource.Application.LevyTransaction
                 MessageType = levyTransaction.GetType().FullName
             }).ToList();
             cancellationToken.ThrowIfCancellationRequested();
-            await dataContext.LevyTransactions.AddRangeAsync(models, cancellationToken).ConfigureAwait(false);
-            await dataContext.SaveChanges(cancellationToken);
+
+            await dataContext.SaveBatch(models, cancellationToken).ConfigureAwait(false);
 
             //await bulkInsert.Insert(models).ConfigureAwait(false);
             logger.LogInfo($"Saved {levyTransactions.Count} levy transactions to db.");

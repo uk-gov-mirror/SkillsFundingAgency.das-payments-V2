@@ -13,9 +13,10 @@ namespace SFA.DAS.Payments.FundingSource.Application.Data
     {
         DbSet<LevyAccountModel> LevyAccounts { get; }
         DbSet<EmployerProviderPriorityModel> EmployerProviderPriorities { get; }
-        DbSet<LevyTransactionModel> LevyTransactions { get; }
+        //        DbSet<LevyTransactionModel> LevyTransactions { get; }
         Task<int> SaveChanges(CancellationToken cancellationToken);
         Task<List<LevyTransactionModel>> GetEmployerLevyTransactions(long employerAccountId);
+        Task SaveBatch(IList<LevyTransactionModel> batch, CancellationToken cancellationToken);
     }
 
     public class FundingSourceDataContext : DbContext, IFundingSourceDataContext
@@ -47,13 +48,20 @@ namespace SFA.DAS.Payments.FundingSource.Application.Data
         {
             if (connectionString != null)
                 optionsBuilder.UseSqlServer(connectionString);
+
         }
 
         public async Task<List<LevyTransactionModel>> GetEmployerLevyTransactions(long employerAccountId)
         {
-
             return await LevyTransactions.Where(transaction => transaction.AccountId == employerAccountId)
                 .ToListAsync();
+        }
+
+        public async Task SaveBatch(IList<LevyTransactionModel> batch, CancellationToken cancellationToken)
+        {
+            ChangeTracker.AutoDetectChangesEnabled = false;
+            await LevyTransactions.AddRangeAsync(batch, cancellationToken).ConfigureAwait(false);
+            await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

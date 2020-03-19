@@ -150,31 +150,31 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
         [TestCase(100, 10, 3)]
         [TestCase(100, 10, 4)]
         [TestCase(100, 10, 5)]
-        [TestCase(100, 10, 6)]
-        [TestCase(100, 10, 7)]
-        [TestCase(100, 10, 8)]
-        [TestCase(100, 10, 9)]
-        [TestCase(100, 10, 10)]
+        //[TestCase(100, 10, 6)]
+        //[TestCase(100, 10, 7)]
+        //[TestCase(100, 10, 8)]
+        //[TestCase(100, 10, 9)]
+        //[TestCase(100, 10, 10)]
         [TestCase(500, 30, 1)]
         [TestCase(500, 30, 2)]
         [TestCase(500, 30, 3)]
         [TestCase(500, 30, 4)]
         [TestCase(500, 30, 5)]
-        [TestCase(500, 30, 6)]
-        [TestCase(500, 30, 7)]
-        [TestCase(500, 30, 8)]
-        [TestCase(500, 30, 9)]
-        [TestCase(500, 30, 10)]
+        //[TestCase(500, 30, 6)]
+        //[TestCase(500, 30, 7)]
+        //[TestCase(500, 30, 8)]
+        //[TestCase(500, 30, 9)]
+        //[TestCase(500, 30, 10)]
         [TestCase(1000, 60, 1)]
         [TestCase(1000, 60, 2)]
         [TestCase(1000, 60, 3)]
         [TestCase(1000, 60, 4)]
         [TestCase(1000, 60, 5)]
-        [TestCase(1000, 60, 6)]
-        [TestCase(1000, 60, 7)]
-        [TestCase(1000, 60, 8)]
-        [TestCase(1000, 60, 9)]
-        [TestCase(1000, 60, 10)]
+        //[TestCase(1000, 60, 6)]
+        //[TestCase(1000, 60, 7)]
+        //[TestCase(1000, 60, 8)]
+        //[TestCase(1000, 60, 9)]
+        //[TestCase(1000, 60, 10)]
         public async Task Time_To_Clear_Queue(int batchSize, int delayInSeconds, int testIndex)
         {
             Console.WriteLine($"Test: #{testIndex}, batch size: {batchSize}");
@@ -190,11 +190,11 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             {
                 var queueInfo = await client.GetQueueRuntimeInfoAsync(config.AppSettings.LevyEndPoint)
                     .ConfigureAwait(false);
-                Console.WriteLine($"Queue count: {queueInfo.MessageCount}, Active messages: {queueInfo.MessageCountDetails.ActiveMessageCount}, Dead letter: {queueInfo.MessageCountDetails.DeadLetterMessageCount}");
+                Console.WriteLine($"Time: {DateTime.Now:G}. Queue count: {queueInfo.MessageCount}, Active messages: {queueInfo.MessageCountDetails.ActiveMessageCount}, Dead letter: {queueInfo.MessageCountDetails.DeadLetterMessageCount}");
                 if (DateTime.UtcNow > visibleTime && queueInfo.MessageCount == 0 )
                 {
                     var executionTime = DateTime.UtcNow - visibleTime;
-                    Console.WriteLine($"Took: {executionTime.TotalSeconds} seconds to clear {batchSize} levy transactions");
+                    Console.WriteLine($"Time: {DateTime.Now:G}. Took: {executionTime.TotalSeconds} seconds to clear {batchSize} levy transactions");
                     Assert.Pass();
                 }
                 await Task.Delay(TimeSpan.FromMilliseconds(500));
