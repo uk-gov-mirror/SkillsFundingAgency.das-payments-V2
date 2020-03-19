@@ -191,7 +191,7 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
                 var queueInfo = await client.GetQueueRuntimeInfoAsync(config.AppSettings.LevyEndPoint)
                     .ConfigureAwait(false);
                 Console.WriteLine($"Time: {DateTime.Now:G}. Queue count: {queueInfo.MessageCount}, Active messages: {queueInfo.MessageCountDetails.ActiveMessageCount}, Dead letter: {queueInfo.MessageCountDetails.DeadLetterMessageCount}");
-                if (DateTime.UtcNow > visibleTime && queueInfo.MessageCount == 0 )
+                if (DateTime.UtcNow > visibleTime && queueInfo.MessageCount == 0)
                 {
                     var executionTime = DateTime.UtcNow - visibleTime;
                     Console.WriteLine($"Time: {DateTime.Now:G}. Took: {executionTime.TotalSeconds} seconds to clear {batchSize} levy transactions");
@@ -234,16 +234,16 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
 
         private async Task<int> GetStoredCount()
         {
-            using var tx = dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
-            try
-            {
-                return dataContext.LevyTransactions.Count(levyTransaction => levyTransaction.JobId == jobId);
-            }
-            catch (Exception)
-            {
-                await Task.Delay(500).ConfigureAwait(false);
-                return dataContext.LevyTransactions.Count(levyTransaction => levyTransaction.JobId == jobId);
-            }
+            using (var tx = dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted))
+                try
+                {
+                    return dataContext.LevyTransactions.Count(levyTransaction => levyTransaction.JobId == jobId);
+                }
+                catch (Exception)
+                {
+                    await Task.Delay(500).ConfigureAwait(false);
+                    return dataContext.LevyTransactions.Count(levyTransaction => levyTransaction.JobId == jobId);
+                }
         }
 
 
