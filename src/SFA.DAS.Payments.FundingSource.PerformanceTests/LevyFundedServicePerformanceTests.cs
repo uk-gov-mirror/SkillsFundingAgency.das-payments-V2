@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
@@ -175,6 +176,7 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
         //[TestCase(1000, 60, 8)]
         //[TestCase(1000, 60, 9)]
         //[TestCase(1000, 60, 10)]
+        [TestCase(2000, 120, 1)]
         public async Task Time_To_Clear_Queue(int batchSize, int delayInSeconds, int testIndex)
         {
             Console.WriteLine($"Test: #{testIndex}, batch size: {batchSize}");
@@ -202,6 +204,17 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
             Assert.Fail("Failed to process all messages.");
         }
 
+        [Test]
+        public void Test()
+        {
+            var lst = new List<int>();
+            lst.AddRange(Enumerable.Range(1, 100).Select(i => i % 4 == 0 ? 999 : i % 3 == 0 ? 998 : i % 2 == 0 ? 997 : 996));
+            foreach (var group in lst.GroupBy(i => i))
+            {
+                Console.WriteLine($"Account: {group.Key}, count: {group.Count()} ");
+            }
+        }
+
         private async Task SendMessages(int batchSize, DateTimeOffset visibleTime)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -217,7 +230,7 @@ namespace SFA.DAS.Payments.FundingSource.PerformanceTests
                     DeliveryPeriod = 1,
                     JobId = jobId,
                     Ukprn = 100003915,
-                    AccountId = 999,
+                    AccountId = i % 4 == 0 ? 999 : i % 3 == 0 ? 998 : i % 2 == 0 ? 997 : 996, //i % 2 == 0 ? 998 : 999,
                     SfaContributionPercentage = .95M,
                     EarningEventId = Guid.NewGuid(),
                     Learner = new Learner { Uln = 99999 },
