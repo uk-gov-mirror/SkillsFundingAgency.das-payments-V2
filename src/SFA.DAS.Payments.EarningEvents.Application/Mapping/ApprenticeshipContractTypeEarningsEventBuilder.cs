@@ -6,6 +6,7 @@ using SFA.DAS.Payments.EarningEvents.Messages.Internal.Commands;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ESFA.DC.ILR.FundingService.FM36.FundingOutput.Model.Output;
 
 namespace SFA.DAS.Payments.EarningEvents.Application.Mapping
 {
@@ -27,13 +28,13 @@ namespace SFA.DAS.Payments.EarningEvents.Application.Mapping
 
             foreach (var intermediateLearningAim in intermediateResults)
             {
-                var episodesByContractType = intermediateLearningAim.PriceEpisodes.GroupBy(x => x.PriceEpisodeValues.PriceEpisodeContractType);
+                var episodesByContractType = intermediateLearningAim.PriceEpisodes.GroupBy(x => new { x.PriceEpisodeValues.PriceEpisodeContractType, x.PriceEpisodeValues.PriceEpisodeRedStatusCode } );
 
                 foreach (var priceEpisodes in episodesByContractType)
                 {
                     var learnerWithSortedPriceEpisodes = intermediateLearningAim.CopyReplacingPriceEpisodes(priceEpisodes);
 
-                    var earningEvent = factory.Create(priceEpisodes.Key);
+                    var earningEvent = factory.Create(priceEpisodes.Key.PriceEpisodeContractType, priceEpisodes.Key.PriceEpisodeRedStatusCode);
                     if (!earningEvent.IsPayable) continue;
 
                     mapper.Map(learnerWithSortedPriceEpisodes, earningEvent);

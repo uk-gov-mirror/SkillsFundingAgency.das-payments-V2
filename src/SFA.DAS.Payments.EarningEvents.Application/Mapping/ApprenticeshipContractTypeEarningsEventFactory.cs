@@ -11,9 +11,8 @@ namespace SFA.DAS.Payments.EarningEvents.Application.Mapping
         public const string ContractForServicesWithEmployer = "Contract for services with the employer";
         public const string ContractForServicesWithSfa = "Contract for services with the ESFA";
 
-        public ApprenticeshipContractTypeEarningsEvent Create(string contractTypeAsString)
+        public ApprenticeshipContractTypeEarningsEvent Create(string contractTypeAsString, int? redStatusCode)
         {
-
             var contractType = MappingExtensions.GetContractType(contractTypeAsString);
 
             switch (contractType)
