@@ -33,20 +33,20 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         public async Task LevyLearnerMadeRedundant()
         {
             //submit R03
-            GetFm36LearnerForCollectionPeriod("R03/current academic year");
+            GetFm36LearnerForCollectionPeriod("R04/current academic year");
             await SetupTestData(priceEpisodeIdentifier, null, commitmentIdentifier, null);
             var dcHelper = Scope.Resolve<IDcHelper>();
             await dcHelper.SendIlrSubmission(TestSession.FM36Global.Learners,
                 TestSession.Provider.Ukprn,
                 TestSession.CollectionPeriod.AcademicYear,
                 TestSession.CollectionPeriod.Period,
-                TestSession.Provider.JobId);
+                TestSession.Provider.JobId + 1);
         }
 
         [Given("there are less than 6 months remaining of the planned learning")]
         public async Task ThereAreLessThan6MonthsRemainingOfPlannedLearning()
         {
-            GetFm36LearnerForCollectionPeriod("R04/current academic year");
+            GetFm36LearnerForCollectionPeriod("R03/current academic year");
             await SetupTestData(priceEpisodeIdentifier, null, commitmentIdentifier, null);
 
             //CreateDataLockForCommitment(commitmentIdentifier);
