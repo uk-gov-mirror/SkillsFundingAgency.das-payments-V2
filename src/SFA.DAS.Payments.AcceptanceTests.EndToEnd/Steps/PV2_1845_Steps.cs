@@ -40,7 +40,9 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                 TestSession.Provider.Ukprn,
                 TestSession.CollectionPeriod.AcademicYear,
                 TestSession.CollectionPeriod.Period,
-                TestSession.Provider.JobId + 1);
+                TestSession.Provider.JobId);
+
+            await dcHelper.SendPeriodEndTask(20, 3, TestSession.Provider.JobId, "periodEnd");
         }
 
         [Given("there are less than 6 months remaining of the planned learning")]
@@ -50,7 +52,7 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             await SetupTestData(priceEpisodeIdentifier, null, commitmentIdentifier, null, true);
             //await SetupTestData(priceEpisodeIdentifier, null, commitmentIdentifier, null);
 
-            //CreateDataLockForCommitment(commitmentIdentifier);
+            CreateDataLockForCommitment(commitmentIdentifier);
             TestSession.RegenerateJobId();
 
             var dcHelper = Scope.Resolve<IDcHelper>();
@@ -59,6 +61,8 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                 TestSession.CollectionPeriod.AcademicYear,
                 TestSession.CollectionPeriod.Period,
                 TestSession.Provider.JobId);
+
+            await dcHelper.SendPeriodEndTask(20, 4, TestSession.Provider.JobId, "periodEnd");
         }
 
         private void CreateDataLockForCommitment(string commitmentIdentifier)
@@ -69,22 +73,24 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             context.SaveChanges();
         }
 
-        private bool HasNoDataLocksForPriceEpisode(string priceEpisodeIdentifier, short academicYear)
+        private bool HasNoDataLocksForPriceEpisodeInR04(string priceEpisodeIdentifier, short academicYear)
         {
-            var dataLocks = EarningEventsHelper.GetOnProgrammeDataLockErrorsForLearnerAndPriceEpisode(priceEpisodeIdentifier, academicYear, TestSession); //todo take this out
+            var dataLocks = EarningEventsHelper.GetOnProgrammeDataLockErrorsForLearnerAndPriceEpisodeAndDeliveryPeriod(priceEpisodeIdentifier, academicYear, TestSession, 4); //todo take this out
             var payableEarningEvents = EarningEventsHelper.PayableEarningsReceivedForLearner(TestSession);
 
             var result = !EnumerableExtensions.Any(EarningEventsHelper
-                    .GetOnProgrammeDataLockErrorsForLearnerAndPriceEpisode(priceEpisodeIdentifier, academicYear, TestSession));
+                    .GetOnProgrammeDataLockErrorsForLearnerAndPriceEpisodeAndDeliveryPeriod(priceEpisodeIdentifier, academicYear, TestSession, 4));
             return result;
         }
 
         private bool HasPayableEarningEventsForPriceEpisode(string priceEpisodeIdentifier)
         {
-            return EarningEventsHelper.PayableEarningsReceivedForLearner(TestSession).Count(x => x.PriceEpisodes.Any(y => y.Identifier == priceEpisodeIdentifier)) == 2;
+            return EarningEventsHelper.PayableEarningsReceivedForLearner(TestSession).Any(x => x.PriceEpisodes.Any(y => y.Identifier == priceEpisodeIdentifier));
+            //var result = EarningEventsHelper.PayableEarningsReceivedForLearner(TestSession).Count(x => x.PriceEpisodes.Any(y => y.Identifier == priceEpisodeIdentifier)) == 2;
+            //return result;
         }
 
-        private bool HasCorrectlyFunded(short academicYear, int fundingSource, int sfaPercentage)
+        private bool HasCorrectlyFundedR04(short academicYear, int fundingSource, int sfaPercentage)
         {
             var events = PaymentEventsHelper.ProviderPaymentsReceivedForLearner(priceEpisodeIdentifier, academicYear, TestSession);
             return events.Any();
@@ -93,14 +99,14 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
         [Then("bypass the data lock rules")]
         public async Task BypassTheDataLockRules()
         {
-            await WaitForIt(() => HasPayableEarningEventsForPriceEpisode(priceEpisodeIdentifier) && HasNoDataLocksForPriceEpisode(priceEpisodeIdentifier, short.Parse(TestSession.FM36Global.Year)),
+            await WaitForIt(() => HasPayableEarningEventsForPriceEpisode(priceEpisodeIdentifier) && HasNoDataLocksForPriceEpisodeInR04(priceEpisodeIdentifier, short.Parse(TestSession.FM36Global.Year)),
                 "Failed to find a Payable Earning and no Data Locks");
         }
 
         [Then(@"fund the remaining monthly instalments of the learning from Funding Source (.*) \((.*)% SFA funding\) from the date of the Price episode read start date")]
         public async Task ThenFundTheRemainingInstallmentsCorrectly(int fundingSource, int sfaPercentage)
         {
-            await WaitForIt(() => HasCorrectlyFunded(short.Parse(TestSession.FM36Global.Year), fundingSource, sfaPercentage),
+            await WaitForIt(() => HasCorrectlyFundedR04(short.Parse(TestSession.FM36Global.Year), fundingSource, sfaPercentage),
                 "Failed to find correctly funded remaining installments");
         }
     }
