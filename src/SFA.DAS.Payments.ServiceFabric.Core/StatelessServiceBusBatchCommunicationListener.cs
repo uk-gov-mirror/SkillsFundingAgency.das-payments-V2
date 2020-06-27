@@ -369,6 +369,12 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                 {
                     using (var scope = scopeFactory.CreateScope())
                     {
+                        if (retryMessage.ReceivedMessage.SystemProperties.LockedUntilUtc <= DateTime.UtcNow.AddSeconds(-30))
+                        {
+                            logger.LogWarning($"Message expired. ASB Message id: {retryMessage.ReceivedMessage.MessageId}, Message label: {retryMessage.ReceivedMessage.Label}.");
+                            continue;
+                        }
+                         
                         if (!scope.TryResolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType),
                             out object handler))
                         {
