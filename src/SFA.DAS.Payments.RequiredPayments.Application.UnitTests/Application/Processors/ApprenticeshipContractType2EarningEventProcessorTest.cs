@@ -30,6 +30,7 @@ using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 using SFA.DAS.Payments.RequiredPayments.Model.Entities;
 using Earning = SFA.DAS.Payments.RequiredPayments.Domain.Entities.Earning;
 using SFA.DAS.Payments.Model.Core.Entities;
+using SFA.DAS.Payments.Model.Core.Incentives;
 using SFA.DAS.Payments.RequiredPayments.Domain.Services;
 
 namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Processors
@@ -197,11 +198,11 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                                 PriceEpisodeIdentifier = "2",
                                 SfaContributionPercentage = 0.9m,
                             }
-                        })
+                        }),
                     },
                     new OnProgrammeEarning
                     {
-                        Type = OnProgrammeEarningType.Completion,
+                        Type = OnProgrammeEarningType.Learning,
                         Periods = new ReadOnlyCollection<EarningPeriod>(new List<EarningPeriod>
                         {
                             new EarningPeriod
@@ -211,9 +212,25 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                                 SfaContributionPercentage = 0.9m,
                             }
                         })
-                    }
+                    },
                 },
-
+                IncentiveEarnings = new List<IncentiveEarning>
+                {
+                    new IncentiveEarning
+                    {
+                        CensusDate = DateTime.Now,
+                        Type = IncentiveEarningType.OnProgramme16To18FrameworkUplift,
+                        Periods = new ReadOnlyCollection<EarningPeriod>(new List<EarningPeriod>
+                        {
+                            new EarningPeriod
+                            {
+                                Amount = 10,
+                                Period = 1,
+                                PriceEpisodeIdentifier = "2",
+                            }
+                        }),
+                    },  
+                }
             };
 
             var paymentHistoryEntities = new[] {
@@ -230,31 +247,21 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                 new PaymentHistoryEntity
                 {
                     CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
-                    DeliveryPeriod = 3,
+                    DeliveryPeriod = 1,
                     LearnAimReference = earningEvent.LearningAim.Reference,
-                    TransactionType = (int)OnProgrammeEarningType.Completion,
-                    Amount = 300m,
-                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    TransactionType = (int)IncentiveEarningType.OnProgramme16To18FrameworkUplift,
+                    Amount = -10m,
+                    FundingSource = FundingSourceType.FullyFundedSfa,
                     PriceEpisodeIdentifier = "2",
                 },
                 new PaymentHistoryEntity
                 {
                     CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
-                    DeliveryPeriod = 3,
+                    DeliveryPeriod = 1,
                     LearnAimReference = earningEvent.LearningAim.Reference,
-                    TransactionType = (int)OnProgrammeEarningType.Completion,
-                    Amount = -300m,
-                    FundingSource = FundingSourceType.CoInvestedSfa,
-                    PriceEpisodeIdentifier = "2",
-                },
-                new PaymentHistoryEntity
-                {
-                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
-                    DeliveryPeriod = 3,
-                    LearnAimReference = earningEvent.LearningAim.Reference,
-                    TransactionType = (int)OnProgrammeEarningType.Completion,
-                    Amount = -300m,
-                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    TransactionType = (int)IncentiveEarningType.OnProgramme16To18FrameworkUplift,
+                    Amount = -10m,
+                    FundingSource = FundingSourceType.FullyFundedSfa,
                     PriceEpisodeIdentifier = "2",
                 },
                 new PaymentHistoryEntity
@@ -281,10 +288,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
 
             var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities);
             paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
-            //requiredPaymentService
-            //    .Setup(p => p.GetRequiredPayments(It.IsAny<Earning>(), It.IsAny<List<Payment>>()))
-            //    .Returns(requiredPayments);
-
+           
             var localMapper = new MapperConfiguration(cfg => cfg.AddProfile<RequiredPaymentsProfile>()).CreateMapper();
 
             var requiredPaymentsProccor = new RequiredPaymentProcessor(new PaymentDueProcessor(), new RefundService());
