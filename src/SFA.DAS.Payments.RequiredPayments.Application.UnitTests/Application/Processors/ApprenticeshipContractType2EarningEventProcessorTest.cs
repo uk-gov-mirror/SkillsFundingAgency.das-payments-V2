@@ -30,6 +30,7 @@ using SFA.DAS.Payments.RequiredPayments.Messages.Events;
 using SFA.DAS.Payments.RequiredPayments.Model.Entities;
 using Earning = SFA.DAS.Payments.RequiredPayments.Domain.Entities.Earning;
 using SFA.DAS.Payments.Model.Core.Entities;
+using SFA.DAS.Payments.RequiredPayments.Domain.Services;
 
 namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Processors
 {
@@ -64,7 +65,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                 .Setup(x => x.IsDuplicate(It.IsAny<IPaymentsEvent>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
             act2EarningEventProcessor = mocker.Create<ApprenticeshipContractType2EarningEventProcessor>(
-                new NamedParameter("apprenticeshipKey", "key"), 
+                new NamedParameter("apprenticeshipKey", "key"),
                 new NamedParameter("mapper", mapper),
                 new AutowiringParameter());
         }
@@ -145,7 +146,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
             } };
 
             var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities);
-            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey),It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
+            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
             requiredPaymentService
                 .Setup(p => p.GetRequiredPayments(It.Is<Earning>(x => x.Amount == 100), It.Is<List<Payment>>(x => x.Count == 1)))
                 .Returns(requiredPayments)
@@ -159,6 +160,155 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
             Assert.AreEqual(1, actualRequiredPayment.Count);
             Assert.AreEqual(1, actualRequiredPayment.First().AmountDue);
             Assert.AreEqual(earningEvent.LearningAim.Reference, actualRequiredPayment.First().LearningAim.Reference);
+        }
+
+        [Test]
+        public async Task TestHandleEventForPV2_2012()
+        {
+            // arrange
+            var period = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1920, 4);
+            
+            var earningEvent = new ApprenticeshipContractType2EarningEvent
+            {
+                Ukprn = 1,
+                CollectionPeriod = period,
+                CollectionYear = period.AcademicYear,
+                Learner = EarningEventDataHelper.CreateLearner(),
+                LearningAim = EarningEventDataHelper.CreateLearningAim(),
+                PriceEpisodes = new List<PriceEpisode>
+                {
+                    new PriceEpisode
+                    {
+                        Identifier = "2",
+                        CompletionHoldBackExemptionCode = 1,
+                    }
+                },
+                OnProgrammeEarnings = new List<OnProgrammeEarning>()
+                {
+                    new OnProgrammeEarning
+                    {
+                        Type = OnProgrammeEarningType.Learning,
+                        Periods = new ReadOnlyCollection<EarningPeriod>(new List<EarningPeriod>
+                        {
+                            new EarningPeriod
+                            {
+                                Amount = 100,
+                                Period = 2,
+                                PriceEpisodeIdentifier = "2",
+                                SfaContributionPercentage = 0.9m,
+                            }
+                        })
+                    },
+                    new OnProgrammeEarning
+                    {
+                        Type = OnProgrammeEarningType.Completion,
+                        Periods = new ReadOnlyCollection<EarningPeriod>(new List<EarningPeriod>
+                        {
+                            new EarningPeriod
+                            {
+                                Amount = 300,
+                                Period = 3,
+                                SfaContributionPercentage = 0.9m,
+                            }
+                        })
+                    }
+                },
+
+            };
+
+            var paymentHistoryEntities = new[] {
+                new PaymentHistoryEntity
+                {
+                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
+                    DeliveryPeriod = 2,
+                    LearnAimReference = earningEvent.LearningAim.Reference,
+                    TransactionType = (int)OnProgrammeEarningType.Learning,
+                    Amount = 100m,
+                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    PriceEpisodeIdentifier = "2",
+                },
+                new PaymentHistoryEntity
+                {
+                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
+                    DeliveryPeriod = 3,
+                    LearnAimReference = earningEvent.LearningAim.Reference,
+                    TransactionType = (int)OnProgrammeEarningType.Completion,
+                    Amount = 300m,
+                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    PriceEpisodeIdentifier = "2",
+                },
+                new PaymentHistoryEntity
+                {
+                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
+                    DeliveryPeriod = 3,
+                    LearnAimReference = earningEvent.LearningAim.Reference,
+                    TransactionType = (int)OnProgrammeEarningType.Completion,
+                    Amount = -300m,
+                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    PriceEpisodeIdentifier = "2",
+                },
+                new PaymentHistoryEntity
+                {
+                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
+                    DeliveryPeriod = 3,
+                    LearnAimReference = earningEvent.LearningAim.Reference,
+                    TransactionType = (int)OnProgrammeEarningType.Completion,
+                    Amount = -300m,
+                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    PriceEpisodeIdentifier = "2",
+                },
+                new PaymentHistoryEntity
+                {
+                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
+                    DeliveryPeriod = 2,
+                    LearnAimReference = earningEvent.LearningAim.Reference,
+                    TransactionType = (int)OnProgrammeEarningType.Learning,
+                    Amount = -100m,
+                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    PriceEpisodeIdentifier = "2",
+                },
+                new PaymentHistoryEntity
+                {
+                    CollectionPeriod = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 3),
+                    DeliveryPeriod = 2,
+                    LearnAimReference = earningEvent.LearningAim.Reference,
+                    TransactionType = (int)OnProgrammeEarningType.Learning,
+                    Amount = -100m,
+                    FundingSource = FundingSourceType.CoInvestedSfa,
+                    PriceEpisodeIdentifier = "2",
+                },
+            };
+
+            var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities);
+            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
+            //requiredPaymentService
+            //    .Setup(p => p.GetRequiredPayments(It.IsAny<Earning>(), It.IsAny<List<Payment>>()))
+            //    .Returns(requiredPayments);
+
+            var localMapper = new MapperConfiguration(cfg => cfg.AddProfile<RequiredPaymentsProfile>()).CreateMapper();
+
+            var requiredPaymentsProccor = new RequiredPaymentProcessor(new PaymentDueProcessor(), new RefundService());
+            var logger = new Mock<IPaymentLogger>();
+            var duplicateEarningsService = new Mock<IDuplicateEarningEventService>();
+            var apprenticeshipKeyProvider = new Mock<IApprenticeshipKeyProvider>();
+            var paymentHistoryRepo = new Mock<IPaymentHistoryRepository>();
+
+            paymentHistoryRepo.Setup(x => 
+                    x.GetPaymentHistory(It.IsAny<ApprenticeshipKey>(), It.IsAny<byte>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(paymentHistoryEntities.ToList());
+
+            var sut = new ApprenticeshipContractType2EarningEventProcessor(localMapper, requiredPaymentsProccor, new HoldingBackCompletionPaymentService(),
+                paymentHistoryRepo.Object, apprenticeshipKeyProvider.Object, new NegativeEarningsService(new RefundService()), logger.Object, duplicateEarningsService.Object);
+
+
+            // act
+            var actualRequiredPayments = await sut.HandleEarningEvent(earningEvent, paymentHistoryCacheMock.Object, CancellationToken.None);
+
+            // assert
+            actualRequiredPayments.Should().NotBeNull();
+            actualRequiredPayments.Should().HaveCount(2);
+            actualRequiredPayments.Should().ContainEquivalentOf(new { AmountDue = 100m, TransactionType = TransactionType.Learning, DeliveryPeriod = 2});
+            actualRequiredPayments.Should().ContainEquivalentOf(new { AmountDue = 300m, TransactionType = TransactionType.Completion, DeliveryPeriod = 3});
         }
 
         [Test]
@@ -316,7 +466,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
             var paymentHistoryEntities = new PaymentHistoryEntity[0];
 
             var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities);
-            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey),It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
+            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
 
             requiredPaymentService
                 .Setup(p => p.GetRequiredPayments(It.Is<Earning>(x => x.Amount == 100), It.Is<List<Payment>>(x => x.Count == 0)))
@@ -378,7 +528,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                 },
             };
             var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities);
-            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey),It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
+            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
 
             requiredPaymentService
                 .Setup(p => p.GetRequiredPayments(It.Is<Earning>(x => x.Amount == amount), It.Is<List<Payment>>(x => x.Count == 0)))
@@ -416,8 +566,8 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                 }
             };
 
-            earning.Periods[0].ApprenticeshipEmployerType 
-                = previousPayment.ApprenticeshipEmployerType 
+            earning.Periods[0].ApprenticeshipEmployerType
+                = previousPayment.ApprenticeshipEmployerType
                 = employerType;
 
             earning.Type = OnProgrammeEarningType.Balancing;
@@ -451,7 +601,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
                 .Returns(requiredPayments);
 
             // act
-            var actualRequiredPayment = 
+            var actualRequiredPayment =
                 await act2EarningEventProcessor.HandleEarningEvent(earningEvent, paymentHistoryCacheMock.Object, CancellationToken.None);
 
             // assert
@@ -510,7 +660,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
 
             var paymentHistoryEntities = new List<PaymentHistoryEntity>();
             var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities.ToArray());
-            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey),It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
+            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
             requiredPaymentService
                 .Setup(p => p.GetRequiredPayments(It.Is<Earning>(x => x.Amount == 0), It.Is<List<Payment>>(x => x.Count == 0)))
                 .Returns(requiredPayments)
@@ -529,7 +679,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
         {
             // arrange
             var period = CollectionPeriodFactory.CreateFromAcademicYearAndPeriod(1819, 2);
-            
+
             var earningEvent = new ApprenticeshipContractType2EarningEvent
             {
                 Ukprn = 1,
@@ -574,7 +724,7 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.UnitTests.Application.Pr
 
             var paymentHistoryEntities = new PaymentHistoryEntity[0];
             var paymentHistory = new ConditionalValue<PaymentHistoryEntity[]>(true, paymentHistoryEntities);
-            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey),It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
+            paymentHistoryCacheMock.Setup(c => c.TryGet(It.Is<string>(key => key == CacheKeys.PaymentHistoryKey), It.IsAny<CancellationToken>())).ReturnsAsync(paymentHistory).Verifiable();
             requiredPaymentService
                 .Setup(p => p.GetRequiredPayments(It.Is<Earning>(x => x.Amount == 100), It.Is<List<Payment>>(x => x.Count == 0)))
                 .Returns(requiredPayments)
