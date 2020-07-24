@@ -39,7 +39,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
             this.queryDataContext = queryDataContext ?? throw new ArgumentNullException(nameof(queryDataContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.queryDataContext.SetTimeout(TimeSpan.FromSeconds(270));//TODO: use config
-            //((IMetricsQueryDataContext)queryDataContext).ConfigureLogging(LogSql, LoggingCategories.SQL);  ////TODO: DO NOT DELETE UNTIL THIS CAN BE CONFIGURED IN CONFIG
+            ((MetricsQueryDataContext)queryDataContext).ConfigureLogging(LogSql, LoggingCategories.SQL);  ////TODO: DO NOT DELETE UNTIL THIS CAN BE CONFIGURED IN CONFIG
         }
 
         private void LogSql(string sql)
@@ -107,6 +107,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
 
         public async Task<ContractTypeAmounts> GetHeldBackCompletionPaymentsTotal(long ukprn, long jobId, CancellationToken cancellationToken)
         {
+            
             var amounts = await queryDataContext.RequiredPaymentEvents
                 .AsNoTracking()
                 .Where(rp =>

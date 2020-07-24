@@ -45,6 +45,10 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Infrastructure.Ioc
                 .As<ISubmissionMetricsRepository>()
                 .InstancePerLifetimeScope();
 
+            builder.RegisterType<MetricsQueryTransactionFactory>()
+                .As<IMetricsQueryTransactionFactory>()
+                .InstancePerLifetimeScope();
+
             builder.RegisterType<SubmissionMetricsService>()
                 .As<ISubmissionMetricsService>()
                 .InstancePerLifetimeScope();
