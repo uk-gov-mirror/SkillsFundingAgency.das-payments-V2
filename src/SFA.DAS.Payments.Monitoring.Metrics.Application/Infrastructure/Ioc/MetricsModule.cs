@@ -31,7 +31,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Infrastructure.Ioc
                     return new MetricsQueryDataContext(configHelper.GetConnectionString("PaymentsMetricsConnectionString"));
                 })
                 .As<IMetricsQueryDataContext>()
-                .InstancePerLifetimeScope();
+                .InstancePerDependency();
 
             builder.Register((c, p) =>
                 {
@@ -47,6 +47,10 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Infrastructure.Ioc
 
             builder.RegisterType<SubmissionMetricsService>()
                 .As<ISubmissionMetricsService>()
+                .InstancePerLifetimeScope();
+
+            builder.RegisterType<MetricsQueryDataContextFactory>()
+                .As<IMetricsQueryDataContextFactory>()
                 .InstancePerLifetimeScope();
         }
     }

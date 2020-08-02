@@ -35,6 +35,30 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
             this.telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
         }
 
+        public async Task<List<TransactionTypeAmounts>> GetEarnings(long ukprn, short academicYear,
+            byte collectionPeriod, CancellationToken cancellationToken)
+
+        {
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                return await dcDataContext.GetEarnings(ukprn, academicYear, collectionPeriod, cancellationToken);
+            }
+            finally
+            {
+                stopwatch.Stop();
+                telemetry.TrackEvent("Metrics.GetDcEarnings",
+                    new Dictionary<string, string>()
+                    {
+                        {TelemetryKeys.Ukprn,ukprn.ToString()}
+                    }, 
+                    new Dictionary<string, double>()
+                    {
+                        {TelemetryKeys.Duration,stopwatch.ElapsedMilliseconds}
+                    });
+            }
+        }
+
         public async Task BuildMetrics(long ukprn, long jobId, short academicYear, byte collectionPeriod, CancellationToken cancellationToken)
         {
             try
@@ -42,8 +66,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 logger.LogDebug($"Building metrics for job: {jobId}, provider: {ukprn}, Academic year: {academicYear}, Collection period: {collectionPeriod}");
                 var stopwatch = Stopwatch.StartNew();
                 var submissionSummary = submissionSummaryFactory.Create(ukprn, jobId, academicYear, collectionPeriod);
-                var dcEarningsTask = dcDataContext.GetEarnings(ukprn, academicYear, collectionPeriod, cancellationToken);
-                var dasEarningsTask = submissionRepository.GetDasEarnings(ukprn, jobId, cancellationToken);
+                var dcEarningsTask = GetEarnings(ukprn, academicYear, collectionPeriod, cancellationToken);
                 var dataLocksTask = submissionRepository.GetDataLockedEarnings(ukprn, jobId, cancellationToken);
                 var dataLocksTotalTask = submissionRepository.GetDataLockedEarningsTotal(ukprn, jobId, cancellationToken);
                 var dataLocksAlreadyPaid =
@@ -51,6 +74,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 var requiredPaymentsTask = submissionRepository.GetRequiredPayments(ukprn, jobId, cancellationToken);
                 var heldBackCompletionAmountsTask = submissionRepository.GetHeldBackCompletionPaymentsTotal(ukprn, jobId, cancellationToken);
                 var yearToDateAmountsTask = submissionRepository.GetYearToDatePaymentsTotal(ukprn, academicYear, collectionPeriod, cancellationToken);
+                var dasEarningsTask = submissionRepository.GetDasEarnings(ukprn, jobId, cancellationToken);
                 var dataTask = Task.WhenAll(dcEarningsTask, dasEarningsTask, dataLocksTask, dataLocksTotalTask, dataLocksAlreadyPaid, requiredPaymentsTask, heldBackCompletionAmountsTask, yearToDateAmountsTask);
                 var waitTask = Task.Delay(TimeSpan.FromSeconds(270), cancellationToken);
                 Task.WaitAny(dataTask, waitTask);

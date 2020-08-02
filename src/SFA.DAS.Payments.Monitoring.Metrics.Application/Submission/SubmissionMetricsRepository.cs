@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
+using SFA.DAS.Payments.Application.Infrastructure.Telemetry;
 using SFA.DAS.Payments.Model.Core.Entities;
 using SFA.DAS.Payments.Monitoring.Metrics.Data;
 using SFA.DAS.Payments.Monitoring.Metrics.Model;
@@ -26,19 +28,25 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
         Task SaveSubmissionMetrics(SubmissionSummaryModel submissionSummary, CancellationToken cancellationToken);
     }
 
+
     public class SubmissionMetricsRepository : ISubmissionMetricsRepository
     {
         private readonly IMetricsPersistenceDataContext persistenceDataContext;
-        private readonly IMetricsQueryDataContext queryDataContext;
-        private readonly IPaymentLogger logger;
 
-        public SubmissionMetricsRepository(
-            IMetricsPersistenceDataContext persistenceDataContext, IMetricsQueryDataContext queryDataContext, IPaymentLogger logger)
+        private readonly IMetricsQueryDataContextFactory queryDataContextFactory;
+        private IMetricsQueryDataContext queryDataContext => queryDataContextFactory.Create();
+        private readonly IPaymentLogger logger;
+        private readonly ITelemetry telemetry;
+
+//        public SubmissionMetricsRepository(IMetricsPersistenceDataContext persistenceDataContext, IMetricsQueryDataContext queryDataContext, IPaymentLogger logger, ITelemetry telemetry)
+        public SubmissionMetricsRepository(IMetricsPersistenceDataContext persistenceDataContext, IMetricsQueryDataContextFactory queryDataContextFactory, IPaymentLogger logger, ITelemetry telemetry)
         {
             this.persistenceDataContext = persistenceDataContext ?? throw new ArgumentNullException(nameof(persistenceDataContext));
-            this.queryDataContext = queryDataContext ?? throw new ArgumentNullException(nameof(queryDataContext));
+            this.queryDataContextFactory = queryDataContextFactory ?? throw new ArgumentNullException(nameof(queryDataContextFactory));
+            //this.queryDataContext = queryDataContext ?? throw new ArgumentNullException(nameof(queryDataContext));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            this.queryDataContext.SetTimeout(TimeSpan.FromSeconds(270));//TODO: use config
+            this.telemetry = telemetry ?? throw new ArgumentNullException(nameof(telemetry));
+            //this.queryDataContext.SetTimeout(TimeSpan.FromSeconds(270));//TODO: use config
             //((IMetricsQueryDataContext)queryDataContext).ConfigureLogging(LogSql, LoggingCategories.SQL);  ////TODO: DO NOT DELETE UNTIL THIS CAN BE CONFIGURED IN CONFIG
         }
 
@@ -48,8 +56,24 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 logger.LogDebug($"Sql: {sql}");
         }
 
+        private void RecordDuration(string eventName, long ukprn, long jobId, Stopwatch stopwatch)
+        {
+            stopwatch.Stop();
+            telemetry.TrackEvent(eventName,
+                new Dictionary<string, string>()
+                {
+                    {TelemetryKeys.Ukprn, ukprn.ToString()},
+                    {TelemetryKeys.JobId,jobId.ToString()}
+                },
+                new Dictionary<string, double>()
+                {
+                    {TelemetryKeys.Duration,stopwatch.ElapsedMilliseconds}
+                });
+        }
+
         public async Task<List<TransactionTypeAmounts>> GetDasEarnings(long ukprn, long jobId, CancellationToken cancellationToken)
         {
+            var stopwatch = Stopwatch.StartNew();
             var transactionAmounts = await queryDataContext.EarningEventPeriods
                 .AsNoTracking()
                 .Where(ee => ee.Amount != 0 && ee.EarningEvent.Ukprn == ukprn && ee.EarningEvent.JobId == jobId)
@@ -61,7 +85,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                     Amount = group.Sum(x => x.Amount)
                 })
                 .ToListAsync(cancellationToken);
-
+            RecordDuration("Metrics.GetDasEarnings", ukprn, jobId, stopwatch);
             return transactionAmounts
                 .GroupBy(x => x.ContractType)
                 .Select(group => new TransactionTypeAmounts
@@ -89,24 +113,54 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
 
         public async Task<DataLockTypeCounts> GetDataLockedEarnings(long ukprn, long jobId, CancellationToken cancellationToken)
         {
-            return await queryDataContext.GetDataLockCounts(ukprn, jobId, cancellationToken).ConfigureAwait(false);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                return await queryDataContext.GetDataLockCounts(ukprn, jobId, cancellationToken).ConfigureAwait(false);
+
+            }
+            finally
+            {
+                RecordDuration("Metrics.GetDataLockedEarnings", ukprn, jobId, stopwatch);
+            }
         }
 
         public async Task<decimal> GetDataLockedEarningsTotal(long ukprn, long jobId, CancellationToken cancellationToken)
         {
-            return await queryDataContext.DataLockEventNonPayablePeriods
-                .Where(period => period.Amount != 0 && period.DataLockEvent.Ukprn == ukprn && period.DataLockEvent.JobId == jobId)
-                .SumAsync(period => period.Amount, cancellationToken);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                return await queryDataContext.DataLockEventNonPayablePeriods
+                    .Where(period => period.Amount != 0 && period.DataLockEvent.Ukprn == ukprn && period.DataLockEvent.JobId == jobId)
+                    .SumAsync(period => period.Amount, cancellationToken);
+
+            }
+            finally
+            {
+                RecordDuration("Metrics.GetDataLockedEarningsTotal", ukprn, jobId, stopwatch);
+
+            }
+
         }
 
         public async Task<decimal> GetAlreadyPaidDataLockedEarnings(long ukprn, long jobId, CancellationToken cancellationToken)
         {
-            return await queryDataContext.GetAlreadyPaidDataLocksAmount(ukprn, jobId, cancellationToken)
-                .ConfigureAwait(false);
+            var stopwatch = Stopwatch.StartNew();
+            try
+            {
+                return await queryDataContext.GetAlreadyPaidDataLocksAmount(ukprn, jobId, cancellationToken)
+                    .ConfigureAwait(false);
+
+            }
+            finally
+            {
+                RecordDuration("Metrics.GetAlreadyPaidDataLockedEarnings", ukprn, jobId, stopwatch);
+            }
         }
 
         public async Task<ContractTypeAmounts> GetHeldBackCompletionPaymentsTotal(long ukprn, long jobId, CancellationToken cancellationToken)
         {
+            var stopwatch = Stopwatch.StartNew();
             var amounts = await queryDataContext.RequiredPaymentEvents
                 .AsNoTracking()
                 .Where(rp =>
@@ -119,7 +173,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 })
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
-
+            RecordDuration("Metrics.GetHeldBackCompletionPaymentsTotal", ukprn, jobId, stopwatch);
             return new ContractTypeAmounts
             {
                 ContractType1 = amounts.FirstOrDefault(amount => amount.ContractType == ContractType.Act1)?.Amount ?? 0,
@@ -129,6 +183,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
 
         public async Task<List<TransactionTypeAmounts>> GetRequiredPayments(long ukprn, long jobId, CancellationToken cancellationToken)
         {
+            var stopwatch = Stopwatch.StartNew();
             var transactionAmounts = await queryDataContext.RequiredPaymentEvents
                 .AsNoTracking()
                 .Where(rp => rp.Ukprn == ukprn && rp.JobId == jobId && rp.NonPaymentReason == null)
@@ -140,7 +195,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                     Amount = group.Sum(x => x.Amount)
                 })
                 .ToListAsync(cancellationToken);
-
+            RecordDuration("Metrics.GetRequiredPayments", ukprn, jobId, stopwatch);
             return transactionAmounts
                 .GroupBy(x => x.ContractType)
                 .Select(group => new TransactionTypeAmounts
@@ -168,6 +223,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
 
         public async Task<ContractTypeAmounts> GetYearToDatePaymentsTotal(long ukprn, short academicYear, byte currentCollectionPeriod, CancellationToken cancellationToken)
         {
+            var stopwatch = Stopwatch.StartNew();
             var amounts = await queryDataContext.Payments
                 .AsNoTracking()
                 .Where(p => p.Ukprn == ukprn &&
@@ -177,7 +233,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 .Select(g => new { ContractType = g.Key, Amount = g.Sum(p => p.Amount) })
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
-
+            RecordDuration("Metrics.GetYearToDatePaymentsTotal",ukprn,0,stopwatch);
             return new ContractTypeAmounts
             {
                 ContractType1 = amounts.FirstOrDefault(amount => amount.ContractType == ContractType.Act1)?.Amount ?? 0,

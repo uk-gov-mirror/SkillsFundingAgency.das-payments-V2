@@ -10,5 +10,9 @@
 	CreationDate DATETIMEOFFSET NOT NULL CONSTRAINT DF_EarningEventPeriod__CreationDate DEFAULT (SYSDATETIMEOFFSET()),	
 	CensusDate DATETIME2  NULL,
 	INDEX IX_EarningEventPeriod__EarningEventId (EarningEventId),
-	INDEX IX_EarningEventPeriod__Search (EarningEventId,PriceEpisodeIdentifier)
+	INDEX IX_EarningEventPeriod__Search (EarningEventId,PriceEpisodeIdentifier)	
 )
+GO
+
+Create NONCLUSTERED INDEX IX_EarningEventPeriod__Amount on Payments2.EarningEventPeriod (Amount) Include (EarningEventId, TransactionType)
+Go
