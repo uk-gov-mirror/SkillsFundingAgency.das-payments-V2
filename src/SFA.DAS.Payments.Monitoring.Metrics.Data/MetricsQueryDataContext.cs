@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using SFA.DAS.Payments.Application.Data.Configurations;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.Audit;
@@ -26,6 +27,9 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Data
         Task<decimal> GetAlreadyPaidDataLocksAmount(long ukprn, long jobId, CancellationToken cancellationToken);
         Task<DataLockTypeCounts> GetDataLockCounts(long ukprn, long jobId, CancellationToken cancellationToken);
         void SetTimeout(TimeSpan timeout);
+
+        Task<IDbContextTransaction>
+            BeginTransaction(IsolationLevel isolationLevel, CancellationToken cancellationToken);
     }
 
     public class MetricsQueryDataContext : DbContext, IMetricsQueryDataContext
@@ -143,6 +147,11 @@ select
         public void SetTimeout(TimeSpan timeout)
         {
             Database.SetCommandTimeout(timeout);
+        }
+
+        public async Task<IDbContextTransaction> BeginTransaction(IsolationLevel isolationLevel, CancellationToken cancellationToken)
+        {
+            return await Database.BeginTransactionAsync(isolationLevel, cancellationToken).ConfigureAwait(false);
         }
     }
 }
