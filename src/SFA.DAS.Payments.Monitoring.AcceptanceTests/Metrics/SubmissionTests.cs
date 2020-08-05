@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
+using Microsoft.EntityFrameworkCore;
 using NServiceBus;
 using NServiceBus.Features;
 using NUnit.Framework;
@@ -15,6 +16,7 @@ using SFA.DAS.Payments.Messages.Core.Events;
 using SFA.DAS.Payments.Monitoring.Jobs.Client;
 using SFA.DAS.Payments.Monitoring.Jobs.Data;
 using SFA.DAS.Payments.Monitoring.Jobs.Messages.Commands;
+using SFA.DAS.Payments.Monitoring.Jobs.Model;
 using SFA.DAS.Payments.Monitoring.Metrics.Messages.Commands;
 
 namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Metrics
@@ -69,6 +71,8 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Metrics
             transport.Routing().RouteToEndpoint(typeof(GenerateSubmissionSummary).Assembly, "sfa-das-payments-monitoring-metrics-submission");
 
             EndpointConfiguration.SendOnly();
+            Builder.Register(c => new JobsDataContext(config.PaymentsConnectionString))
+                .InstancePerDependency();
 
             Container = Builder.Build();
             EndpointConfiguration.UseContainer<AutofacBuilder>(c => c.ExistingLifetimeScope(Container));
@@ -95,6 +99,35 @@ namespace SFA.DAS.Payments.Monitoring.AcceptanceTests.Metrics
                 Ukprn = ukprn
             };
             await MessageSession.Send(metricsCommand).ConfigureAwait(false);
+        }
+
+
+        [TestCase(100)]
+        public async Task GenerateMetricsFromLatestSuccessfulJobs(int count)
+        {
+            var dataContext = Container.Resolve<JobsDataContext>();
+            var jobs =await dataContext.Jobs
+                .Where(job => 
+                    job.JobType == JobType.EarningsJob &&
+                    (job.Status == JobStatus.Completed || job.Status == JobStatus.CompletedWithErrors) &&
+                    job.DcJobSucceeded != null && job.DcJobSucceeded == true)
+                .OrderByDescending(job => job.LearnerCount)
+                .Take(count)
+                .ToListAsync();
+
+            var messages = jobs.Select(job => new GenerateSubmissionSummary
+                {
+                    Ukprn = job.Ukprn.Value,
+                    CollectionPeriod = job.CollectionPeriod,
+                    AcademicYear = job.AcademicYear,
+                    JobId = job.DcJobId.Value,
+                })
+                .ToList();
+
+            foreach (var generateSubmissionSummary in messages)
+            {
+                await MessageSession.Send(generateSubmissionSummary).ConfigureAwait(false);
+            }
         }
     }
 }
