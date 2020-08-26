@@ -8,6 +8,8 @@
     <Compile Remove="Mapping\**" />
     <EmbeddedResource Remove="Mapping\**" />
     <None Remove="Mapping\**" />
+    <None Remove="ProcessLearnerCommand.json" />
+    <EmbeddedResource Include="ProcessLearnerCommand.json" />
   </ItemGroup>
 
   <ItemGroup>

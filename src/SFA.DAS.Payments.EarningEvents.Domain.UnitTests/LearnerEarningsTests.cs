@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Autofac.Extras.Moq;
+using AutoMapper;
 using Castle.Components.DictionaryAdapter;
 using ESFA.DC.ILR.FundingService.FM36.FundingOutput.Model.Output;
 using Moq;
@@ -13,6 +15,9 @@ using SFA.DAS.Payments.EarningEvents.Messages.Events;
 using SFA.DAS.Payments.EarningEvents.Messages.Internal.Commands;
 using SFA.DAS.Payments.Model.Core.Incentives;
 using FluentAssertions;
+using Newtonsoft.Json;
+using SFA.DAS.Payments.EarningEvents.Application.Mapping;
+using SFA.DAS.Payments.EarningEvents.Application.Services;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.OnProgramme;
 
@@ -27,6 +32,7 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
         private Mock<IApprenticeshipContractTypeEarningsEventBuilder> actBuilder;
         private Mock<IFunctionalSkillEarningsEventBuilder> functionalSkillBuilder;
         private Mock<IConfigurationHelper> configurationHelper;
+
         [SetUp]
         public void SetUp()
         {
@@ -61,11 +67,11 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
         public void Fails_If_Validation_Fails()
         {
             mocker.Mock<ILearnerValidator>()
-                .Setup(x => x.Validate(It.IsAny<FM36Learner>()))
-                .Returns(new ValidationResult(new List<ValidationRuleResult> { ValidationRuleResult.Failure("some failure") }))
-                .Verifiable();
+                  .Setup(x => x.Validate(It.IsAny<FM36Learner>()))
+                  .Returns(new ValidationResult(new List<ValidationRuleResult> { ValidationRuleResult.Failure("some failure") }))
+                  .Verifiable();
 
-            var learnerSubmission =new ProcessLearnerCommand
+            var learnerSubmission = new ProcessLearnerCommand
             {
                 Learner = learner,
                 CollectionYear = 1819,
@@ -77,6 +83,42 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             Assert.IsTrue(result.Validation.Failed);
 
             Mock.Verify(validatorMock, actBuilder, functionalSkillBuilder);
+        }
+
+        [Test]
+        public void Does_Not_Throw_For_Two_MathAndEng_Aim()
+        {
+            var configHelper = mocker.Mock<IConfigurationHelper>();
+
+            var config = new MapperConfiguration(cfg => { cfg.AddProfiles(typeof(FunctionalSkillEarningEventBuilder).Assembly); });
+
+            var mapper = new Mapper(config);
+
+            var learnerSubmissionProcessor = new LearnerSubmissionProcessor(
+                new LearnerValidator(),
+                new ApprenticeshipContractTypeEarningsEventBuilder(
+                    new ApprenticeshipContractTypeEarningsEventFactory(),
+                    new RedundancyEarningService(new RedundancyEarningEventFactory(mapper)),
+                    mapper),
+                new FunctionalSkillEarningEventBuilder(mapper, new RedundancyEarningService(new RedundancyEarningEventFactory(mapper))),
+                configHelper.Object);
+
+            var learnerSubmission = DeserializeResource(@"ProcessLearnerCommand.json");
+
+            Assert.Throws<AutoMapperMappingException>(() => learnerSubmissionProcessor.GenerateEarnings(learnerSubmission));
+        }
+
+        private ProcessLearnerCommand DeserializeResource(string filename)
+        {
+            var assembly = GetType().Assembly;
+
+            var stream = assembly.GetManifestResourceStream($"{assembly.GetName().Name}.{filename}");
+
+            using (var reader = new StreamReader(stream))
+            {
+                var serializer = new JsonSerializer();
+                return (ProcessLearnerCommand) serializer.Deserialize(reader, typeof(ProcessLearnerCommand));
+            }
         }
 
         [Test]
@@ -173,7 +215,6 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             act1Payments.First().IncentiveEarnings.Should().BeEmpty();
 
             result.EarningEvents.OfType<Act1FunctionalSkillEarningsEvent>().Should().BeEmpty();
-
         }
 
         [Test]
@@ -235,7 +276,6 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
 
             result.EarningEvents.OfType<ApprenticeshipContractType2EarningEvent>().Should().BeEmpty();
             result.EarningEvents.OfType<Act2FunctionalSkillEarningsEvent>().Should().BeEmpty();
-
         }
 
         [Test]
@@ -255,23 +295,23 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             {
                 new ApprenticeshipContractType2EarningEvent
                 {
-                    CollectionPeriod = new CollectionPeriod {AcademicYear = 1, Period = 1},
+                    CollectionPeriod = new CollectionPeriod { AcademicYear = 1, Period = 1 },
                     IncentiveEarnings = new List<IncentiveEarning>
                     {
                         new IncentiveEarning
                         {
                             Type = IncentiveEarningType.Balancing16To18FrameworkUplift, Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 1},
-                                new EarningPeriod {Period = 2}
+                                new EarningPeriod { Period = 1 },
+                                new EarningPeriod { Period = 2 }
                             }.AsReadOnly()
                         },
                         new IncentiveEarning
                         {
                             Type = IncentiveEarningType.Balancing16To18FrameworkUplift, Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 3},
-                                new EarningPeriod {Period = 4}
+                                new EarningPeriod { Period = 3 },
+                                new EarningPeriod { Period = 4 }
                             }.AsReadOnly()
                         }
                     },
@@ -281,16 +321,16 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
                         {
                             Periods = new List<EarningPeriod>()
                             {
-                                new EarningPeriod {Period = 1},
-                                new EarningPeriod {Period = 2}
+                                new EarningPeriod { Period = 1 },
+                                new EarningPeriod { Period = 2 }
                             }.AsReadOnly()
                         },
                         new OnProgrammeEarning
                         {
                             Periods = new List<EarningPeriod>()
                             {
-                                new EarningPeriod {Period = 3},
-                                new EarningPeriod {Period = 4}
+                                new EarningPeriod { Period = 3 },
+                                new EarningPeriod { Period = 4 }
                             }.AsReadOnly()
                         }
                     }
@@ -301,15 +341,15 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             {
                 new Act2FunctionalSkillEarningsEvent
                 {
-                    CollectionPeriod = new CollectionPeriod {AcademicYear = 1, Period = 1},
+                    CollectionPeriod = new CollectionPeriod { AcademicYear = 1, Period = 1 },
                     Earnings = new List<FunctionalSkillEarning>
                     {
                         new FunctionalSkillEarning
                         {
                             Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 1},
-                                new EarningPeriod {Period = 2}
+                                new EarningPeriod { Period = 1 },
+                                new EarningPeriod { Period = 2 }
                             }.AsReadOnly()
                         }
                     }.AsReadOnly()
@@ -325,7 +365,7 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             // assert
             Assert.AreEqual(2, result.EarningEvents.Count);
             Assert.IsInstanceOf<ApprenticeshipContractTypeEarningsEvent>(result.EarningEvents[0]);
-            var act2Earning = (ApprenticeshipContractTypeEarningsEvent)result.EarningEvents[0];
+            var act2Earning = (ApprenticeshipContractTypeEarningsEvent) result.EarningEvents[0];
 
             Assert.AreEqual(1, act2Earning.IncentiveEarnings.Count);
             Assert.AreEqual(1, act2Earning.IncentiveEarnings[0].Periods.Count);
@@ -336,13 +376,12 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             Assert.AreEqual(1, act2Earning.OnProgrammeEarnings[0].Periods[0].Period);
 
             Assert.IsInstanceOf<Act2FunctionalSkillEarningsEvent>(result.EarningEvents[1]);
-            var mathsEarning = (Act2FunctionalSkillEarningsEvent)result.EarningEvents[1];
+            var mathsEarning = (Act2FunctionalSkillEarningsEvent) result.EarningEvents[1];
             Assert.AreEqual(1, mathsEarning.Earnings.Count);
             Assert.AreEqual(1, mathsEarning.Earnings[0].Periods.Count);
             Assert.AreEqual(1, mathsEarning.Earnings[0].Periods[0].Period);
 
             Mock.Verify(validatorMock, actBuilder, functionalSkillBuilder);
-
         }
 
         [Test]
@@ -362,23 +401,23 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             {
                 new ApprenticeshipContractType1EarningEvent
                 {
-                    CollectionPeriod = new CollectionPeriod {AcademicYear = 1, Period = 1},
+                    CollectionPeriod = new CollectionPeriod { AcademicYear = 1, Period = 1 },
                     IncentiveEarnings = new List<IncentiveEarning>
                     {
                         new IncentiveEarning
                         {
                             Type = IncentiveEarningType.Balancing16To18FrameworkUplift, Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 1},
-                                new EarningPeriod {Period = 2}
+                                new EarningPeriod { Period = 1 },
+                                new EarningPeriod { Period = 2 }
                             }.AsReadOnly()
                         },
                         new IncentiveEarning
                         {
                             Type = IncentiveEarningType.Balancing16To18FrameworkUplift, Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 3},
-                                new EarningPeriod {Period = 4}
+                                new EarningPeriod { Period = 3 },
+                                new EarningPeriod { Period = 4 }
                             }.AsReadOnly()
                         }
                     },
@@ -388,16 +427,16 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
                         {
                             Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 1},
-                                new EarningPeriod {Period = 2}
+                                new EarningPeriod { Period = 1 },
+                                new EarningPeriod { Period = 2 }
                             }.AsReadOnly()
                         },
                         new OnProgrammeEarning
                         {
                             Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 3},
-                                new EarningPeriod {Period = 4}
+                                new EarningPeriod { Period = 3 },
+                                new EarningPeriod { Period = 4 }
                             }.AsReadOnly()
                         }
                     }
@@ -408,15 +447,15 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             {
                 new Act1FunctionalSkillEarningsEvent
                 {
-                    CollectionPeriod = new CollectionPeriod {AcademicYear = 1, Period = 1},
+                    CollectionPeriod = new CollectionPeriod { AcademicYear = 1, Period = 1 },
                     Earnings = new List<FunctionalSkillEarning>
                     {
                         new FunctionalSkillEarning
                         {
                             Periods = new List<EarningPeriod>
                             {
-                                new EarningPeriod {Period = 1},
-                                new EarningPeriod {Period = 2}
+                                new EarningPeriod { Period = 1 },
+                                new EarningPeriod { Period = 2 }
                             }.AsReadOnly()
                         }
                     }.AsReadOnly()
@@ -432,7 +471,7 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             // assert
             Assert.AreEqual(2, result.EarningEvents.Count);
             Assert.IsInstanceOf<ApprenticeshipContractTypeEarningsEvent>(result.EarningEvents[0]);
-            var act2Earning = (ApprenticeshipContractTypeEarningsEvent)result.EarningEvents[0];
+            var act2Earning = (ApprenticeshipContractTypeEarningsEvent) result.EarningEvents[0];
 
             Assert.AreEqual(1, act2Earning.IncentiveEarnings.Count);
             Assert.AreEqual(1, act2Earning.IncentiveEarnings[0].Periods.Count);
@@ -443,7 +482,7 @@ namespace SFA.DAS.Payments.EarningEvents.Domain.UnitTests
             Assert.AreEqual(1, act2Earning.OnProgrammeEarnings[0].Periods[0].Period);
 
             Assert.IsInstanceOf<FunctionalSkillEarningsEvent>(result.EarningEvents[1]);
-            var mathsEarning = (FunctionalSkillEarningsEvent)result.EarningEvents[1];
+            var mathsEarning = (FunctionalSkillEarningsEvent) result.EarningEvents[1];
             Assert.AreEqual(1, mathsEarning.Earnings.Count);
             Assert.AreEqual(1, mathsEarning.Earnings[0].Periods.Count);
             Assert.AreEqual(1, mathsEarning.Earnings[0].Periods[0].Period);
