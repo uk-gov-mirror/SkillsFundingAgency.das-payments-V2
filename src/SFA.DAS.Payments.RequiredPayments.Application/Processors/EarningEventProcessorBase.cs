@@ -131,13 +131,27 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.Processors
 
                         var priceEpisodeIdentifier = requiredPaymentEvent.PriceEpisodeIdentifier;
 
+                        if (earningEvent.PriceEpisodes == null || earningEvent.PriceEpisodes.Count < 1)
+                        {
+                            var errorMessage = $"earningEvent id {earningEvent.EventId} does not have any PriceEpisodes unable to map price Episode and LearningAim details, Payment of {requiredPaymentEvent.AmountDue} May be missing from Final Payment";
+                            paymentLogger.LogWarning(errorMessage);
+                        }
+                        
                         if (earningEvent.PriceEpisodes != null && earningEvent.PriceEpisodes.Any())
                         {
                             var priceEpisode = earningEvent.PriceEpisodes.Count == 1
                                 ? earningEvent.PriceEpisodes.FirstOrDefault()
-                                : earningEvent.PriceEpisodes?.SingleOrDefault(x => x.Identifier == priceEpisodeIdentifier);
+                                : earningEvent.PriceEpisodes.FirstOrDefault(x => x.Identifier == priceEpisodeIdentifier);
 
-                            mapper.Map(priceEpisode, requiredPaymentEvent);
+                            //This condition is only going to be true when refunding old PE that has been removed form current EarningEvent in that case  Map priceEpisode details from Payment History
+                            if (priceEpisode == null)
+                            {
+                                MapPriceEpisodeFromOriginalPayment(priceEpisodeIdentifier, requiredPaymentEvent, payments);
+                            }
+                            else
+                            {
+                                mapper.Map(priceEpisode, requiredPaymentEvent);    
+                            }
 
                             if (requiredPaymentEvent.LearningAim != null) mapper.Map(priceEpisode, requiredPaymentEvent.LearningAim);
                         }
@@ -146,13 +160,32 @@ namespace SFA.DAS.Payments.RequiredPayments.Application.Processors
                     }
                 }
                 return result.AsReadOnly();
-
             }
             catch (Exception e)
             {
                 paymentLogger.LogError($"Error while Handling EarningEvent for {earningEvent.Ukprn} ", e);
                 throw;
             }
+        }
+
+        private void MapPriceEpisodeFromOriginalPayment(string priceEpisodeIdentifier, PeriodisedPaymentEvent requiredPaymentEvent, IEnumerable<Payment> paymentHistory)
+        {
+            var originalPayment = paymentHistory.FirstOrDefault(p => p.PriceEpisodeIdentifier == priceEpisodeIdentifier && p.TransactionType == (int)requiredPaymentEvent.TransactionType && p.DeliveryPeriod == requiredPaymentEvent.DeliveryPeriod);
+
+            if (originalPayment == null)
+            {
+                var errorMessage = $"unable to find old Payment history for {priceEpisodeIdentifier}, required Payment {requiredPaymentEvent.AmountDue} will be missing from Final Payment";
+                paymentLogger.LogError(errorMessage);
+                throw new InvalidOperationException(errorMessage);
+            }
+            
+            requiredPaymentEvent.StartDate = originalPayment.StartDate;
+            requiredPaymentEvent.PlannedEndDate = originalPayment.PlannedEndDate;
+            requiredPaymentEvent.ActualEndDate = originalPayment.ActualEndDate;
+            requiredPaymentEvent.CompletionStatus = originalPayment.CompletionStatus;
+            requiredPaymentEvent.CompletionAmount = originalPayment.CompletionAmount;
+            requiredPaymentEvent.InstalmentAmount = originalPayment.InstalmentAmount;
+            requiredPaymentEvent.NumberOfInstalments = originalPayment.NumberOfInstalments;
         }
 
         private static void AddRefundCommitmentDetails(RequiredPayment requiredPayment, PeriodisedRequiredPaymentEvent requiredPaymentEvent)
