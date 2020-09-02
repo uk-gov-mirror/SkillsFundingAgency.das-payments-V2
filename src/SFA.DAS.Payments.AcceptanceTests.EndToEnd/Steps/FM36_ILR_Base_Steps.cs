@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using SFA.DAS.Payments.AcceptanceTests.Core.Automation;
 using SFA.DAS.Payments.AcceptanceTests.Core.Data;
 using SFA.DAS.Payments.AcceptanceTests.EndToEnd.Extensions;
-using SFA.DAS.Payments.AcceptanceTests.EndToEnd.Handlers;
 using SFA.DAS.Payments.AcceptanceTests.EndToEnd.Helpers;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.Entities;
@@ -141,10 +140,11 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
             TestSession.Apprenticeships.GetOrAdd(commitmentIdentifier1, commitment1);
             testDataContext.Apprenticeship.Add(commitment1);
             testDataContext.ApprenticeshipPriceEpisode.AddRange(commitment1.ApprenticeshipPriceEpisodes);
-
+            
+            ApprenticeshipModel commitment2 = null;
             if (commitmentIdentifier2 != null)
             {
-                var commitment2 = new ApprenticeshipBuilder()
+                commitment2 = new ApprenticeshipBuilder()
                     .BuildSimpleApprenticeship(TestSession, learningDelivery2.LearningDeliveryValues, ids.Max())
                     .WithALevyPayingEmployer()
                     .WithApprenticeshipPriceEpisode(priceEpisode2.PriceEpisodeValues)
@@ -163,6 +163,13 @@ namespace SFA.DAS.Payments.AcceptanceTests.EndToEnd.Steps
                 testDataContext.LevyAccount.Add(levyModel);
             }
             await testDataContext.SaveChangesAsync();
+
+            TestSession.Apprenticeships[commitmentIdentifier1].ApprenticeshipPriceEpisodes = commitment1.ApprenticeshipPriceEpisodes;
+
+            if (commitmentIdentifier2 != null)
+            {
+                TestSession.Apprenticeships[commitmentIdentifier1].ApprenticeshipPriceEpisodes = commitment2.ApprenticeshipPriceEpisodes;
+            }
 
             TestSession.FM36Global.UKPRN = TestSession.Provider.Ukprn;
         }
