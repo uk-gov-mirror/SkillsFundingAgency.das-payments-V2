@@ -68,8 +68,7 @@ namespace SFA.DAS.Payments.PeriodEnd.Application.Handlers
 
 
                 if (periodEndEvent is PeriodEndStoppedEvent  
-                    || periodEndEvent is PeriodEndRequestReportsEvent  
-                    || periodEndEvent is PeriodEndRequestValidateSubmissionWindowEvent )
+                    || periodEndEvent is PeriodEndRequestReportsEvent)
                 {
                     logger.LogDebug("Returning as this is either a PeriodEndStop, PeriodEndRequestReports or PeriodEndRequestValidateSubmissionWindow event");
                     return true;
@@ -111,6 +110,10 @@ namespace SFA.DAS.Payments.PeriodEnd.Application.Handlers
                     break;
                 case PeriodEndTaskType.PeriodEndStop:
                     await jobClient.RecordPeriodEndStop(periodEndEvent.JobId, periodEndEvent.CollectionPeriod.AcademicYear,
+                        periodEndEvent.CollectionPeriod.Period, new List<GeneratedMessage> { generatedMessage }).ConfigureAwait(false);
+                    break;
+                case PeriodEndTaskType.PeriodEndSubmissionWindowValidation:
+                    await jobClient.RecordPeriodEndRequestValidateSubmissionWindowEvent(periodEndEvent.JobId, periodEndEvent.CollectionPeriod.AcademicYear,
                         periodEndEvent.CollectionPeriod.Period, new List<GeneratedMessage> { generatedMessage }).ConfigureAwait(false);
                     break;
                 default:

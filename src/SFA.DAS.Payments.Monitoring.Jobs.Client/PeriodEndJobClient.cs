@@ -17,6 +17,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Client
             List<GeneratedMessage> generatedMessages);
         Task RecordPeriodEndStop(long jobId, short collectionYear, byte collectionPeriod,
             List<GeneratedMessage> generatedMessages);
+        Task RecordPeriodEndRequestValidateSubmissionWindowEvent(long jobId, short collectionYear, byte collectionPeriod,
+            List<GeneratedMessage> generatedMessages);
     }
 
     public class PeriodEndJobClient : IPeriodEndJobClient
@@ -73,6 +75,15 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Client
             await StartJob<RecordPeriodEndStopJob>(jobId, collectionYear, collectionPeriod, generatedMessages)
                 .ConfigureAwait(false);
             logger.LogInfo($"Sent request to record period end stop job. Job Id: {jobId}, collection period: {collectionYear}-{collectionPeriod}");
+        }
+
+        public async Task RecordPeriodEndRequestValidateSubmissionWindowEvent(long jobId, short collectionYear, byte collectionPeriod,
+            List<GeneratedMessage> generatedMessages)
+        {
+            logger.LogDebug($"Sending request to record validate submission window. Job Id: {jobId}, collection period: {collectionYear}-{collectionPeriod}");
+            await StartJob<RecordPeriodEndValidateSubmissionWindowJob>(jobId, collectionYear, collectionPeriod, generatedMessages)
+                .ConfigureAwait(false);
+            logger.LogInfo($"Sent request to record period end validate submission window. Job Id: {jobId}, collection period: {collectionYear}-{collectionPeriod}");
         }
     }
 }
