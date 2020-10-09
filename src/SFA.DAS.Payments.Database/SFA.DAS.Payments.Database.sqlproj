@@ -71,6 +71,7 @@
     <Folder Include="Metrics\Tables" />
     <Folder Include="Metrics\Schemas" />
     <Folder Include="Payments2\Views\" />
+    <Folder Include="Metrics\Functions" />
   </ItemGroup>
   <ItemGroup>
     <Build Include="Payments2\Views\Payments2.LatestSuccessfulDataLockJobs.sql" />
@@ -126,6 +127,7 @@
     <Build Include="Metrics\Tables\Metrics.ProviderPaymentFundingSource.sql" />
     <Build Include="Metrics\Tables\Metrics.PeriodEndSummary.sql" />
     <Build Include="Metrics\Tables\Metrics.Tollerance.sql" />
+    <Build Include="Metrics\Functions\Metrics.GetSubmissionsSummary.sql" />
   </ItemGroup>
   <ItemGroup>
     <PostDeploy Include="zzz.Script.PostDeployment.sql" />
