@@ -101,6 +101,14 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             },cancellationToken);
         }
 
+        public async Task<List<long>> GetCurrentPeriodEndValidateSubmissionWindowJobs(CancellationToken cancellationToken)
+        {
+            return await GetCurrentJobs(model =>
+            {
+                return model.JobType == JobType.PeriodEndValidateSubmissionWindowJob;
+            }, cancellationToken);
+        }
+
         private async Task<List<long>> GetCurrentJobs(Func<JobModel, bool> filter, CancellationToken cancellationToken)
         {
             var collection = await GetJobCollection().ConfigureAwait(false);

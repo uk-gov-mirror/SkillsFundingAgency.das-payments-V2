@@ -53,7 +53,7 @@ namespace SFA.DAS.Payments.PeriodEnd.Application.Handlers
                 };
 
                 logger.LogDebug($"Got period end event: {periodEndEvent.ToJson()}");
-                if (taskType != PeriodEndTaskType.PeriodEndReports && taskType != PeriodEndTaskType.PeriodEndSubmissionWindowValidation)
+                if (taskType != PeriodEndTaskType.PeriodEndReports)
                 {
                     await RecordPeriodEndJob(taskType, periodEndEvent).ConfigureAwait(false);
                 }

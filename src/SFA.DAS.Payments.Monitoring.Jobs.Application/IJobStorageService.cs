@@ -23,6 +23,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application
         Task<List<long>> GetCurrentEarningJobs(CancellationToken cancellationToken);
         Task<List<long>> GetCurrentPeriodEndExcludingStartJobs(CancellationToken cancellationToken);
         Task<List<long>> GetCurrentPeriodEndStartJobs(CancellationToken cancellationToken);
+        Task<List<long>> GetCurrentPeriodEndValidateSubmissionWindowJobs(CancellationToken cancellationToken);
         Task StoreDcJobStatus(long jobId, bool succeeded, CancellationToken cancellationToken);
     }
 }

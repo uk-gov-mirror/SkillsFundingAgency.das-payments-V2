@@ -10,19 +10,24 @@ using SFA.DAS.Payments.Monitoring.Jobs.Model;
 
 namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing.PeriodEnd
 {
-    public interface IPeriodEndStartJobStatusService : IPeriodEndJobStatusService { }
+    public interface IPeriodEndStartJobStatusService : IPeriodEndJobStatusService
+    {
+    }
+
     public class PeriodEndStartJobStatusService : PeriodEndJobStatusService, IPeriodEndStartJobStatusService
     {
         private readonly IJobsDataContext context;
 
         public PeriodEndStartJobStatusService(IJobStorageService jobStorageService,
             IPaymentLogger logger, ITelemetry telemetry, IJobStatusEventPublisher eventPublisher,
-            IJobServiceConfiguration config, IJobsDataContext context) : base(jobStorageService, logger, telemetry, eventPublisher, config)
+            IJobServiceConfiguration config, IJobsDataContext context) : base(jobStorageService, logger, telemetry,
+            eventPublisher, config)
         {
             this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
-       
-        protected override async Task<(bool IsComplete, JobStatus? OverriddenJobStatus, DateTimeOffset? completionTime)> PerformAdditionalJobChecks(JobModel job,  CancellationToken cancellationToken)
+
+        protected override async Task<(bool IsComplete, JobStatus? OverriddenJobStatus, DateTimeOffset? completionTime)>
+            PerformAdditionalJobChecks(JobModel job, CancellationToken cancellationToken)
         {
             var outstandingJobs =
                 await context.GetOutstandingOrTimedOutJobs(job.DcJobId, job.StartTime, cancellationToken);
@@ -33,7 +38,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing.PeriodEnd
                 x.EndTime > job.StartTime);
             if (timeoutsPresent) //fail fast
             {
-                return (true, JobStatus.CompletedWithErrors, outstandingJobs.Max(x=>x.EndTime));
+                return (true, JobStatus.CompletedWithErrors, outstandingJobs.Max(x => x.EndTime));
             }
 
             var processingJobsPresent =
@@ -44,7 +49,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing.PeriodEnd
             if (processingJobsPresent)
                 return (false, (JobStatus?) null, (DateTimeOffset?) null);
 
-            return (true,(JobStatus?) null, outstandingJobs.Max(x=>x.EndTime));
+            return (true, (JobStatus?) null, outstandingJobs.Max(x => x.EndTime));
         }
     }
 }

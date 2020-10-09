@@ -23,13 +23,15 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
         private readonly IEarningsJobStatusManager earningsJobStatusManager;
         private readonly IPeriodEndJobStatusManager periodEndJobStatusManager;
         private readonly IPeriodEndStartJobStatusManager periodEndStartJobStatusManager;
+        private readonly IPeriodEndValidateSubmissionWindowJobStatusManager periodEndValidateSubmissionWindowJobStatusManager;
         private readonly ILifetimeScope lifetimeScope;
 
         public JobService(StatefulServiceContext context, IPaymentLogger logger, 
             IEarningsJobStatusManager earningsJobStatusManager,
             IPeriodEndJobStatusManager periodEndJobStatusManager,
             ILifetimeScope lifetimeScope,
-            IPeriodEndStartJobStatusManager periodEndStartJobStatusManager
+            IPeriodEndStartJobStatusManager periodEndStartJobStatusManager,
+            IPeriodEndValidateSubmissionWindowJobStatusManager periodEndValidateSubmissionWindowJobStatusManager
         )
             : base(context)
         {
@@ -38,6 +40,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             this.periodEndJobStatusManager = periodEndJobStatusManager ?? throw new ArgumentNullException(nameof(periodEndJobStatusManager));
             this.lifetimeScope = lifetimeScope;
             this.periodEndStartJobStatusManager = periodEndStartJobStatusManager ?? throw new ArgumentNullException(nameof(periodEndStartJobStatusManager));
+            this.periodEndValidateSubmissionWindowJobStatusManager = periodEndValidateSubmissionWindowJobStatusManager ?? throw new ArgumentNullException(nameof(periodEndValidateSubmissionWindowJobStatusManager));
         }
 
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
@@ -65,7 +68,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.JobService
             return Task.WhenAll(RunSendOnlyEndpoint(),
                 earningsJobStatusManager.Start(cancellationToken),
                 periodEndJobStatusManager.Start(cancellationToken),
-                periodEndStartJobStatusManager.Start(cancellationToken));
+                periodEndStartJobStatusManager.Start(cancellationToken), 
+                periodEndValidateSubmissionWindowJobStatusManager.Start(cancellationToken));
         }
 
         private async Task RunSendOnlyEndpoint()
