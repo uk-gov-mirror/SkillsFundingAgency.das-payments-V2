@@ -24,7 +24,7 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing.PeriodEnd
 
         public async Task<bool> AreSubmissionWindowMetricsValid(int academicYear, int collectionPeriod)
         {
-            var response = await httpClient.GetAsync("");
+            var response = await httpClient.GetAsync($"?academicYear={academicYear}&collectionPeriod={collectionPeriod}");
             return response.IsSuccessStatusCode;
         }
     }

@@ -27,7 +27,9 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Functions
         {
             try
             {
-                var result = await service.ValidateSubmissionWindow(2021, 2);
+                var collectionPeriod = byte.Parse(req.Query["collectionPeriod"]);
+                var academicYear = short.Parse(req.Query["academicYear"]);
+                var result = await service.ValidateSubmissionWindow(academicYear, collectionPeriod);
                 return result.IsValid 
                     ? (IActionResult)new OkObjectResult(result.SubmissionsSummary.ToJson())
                     : new BadRequestResult();
