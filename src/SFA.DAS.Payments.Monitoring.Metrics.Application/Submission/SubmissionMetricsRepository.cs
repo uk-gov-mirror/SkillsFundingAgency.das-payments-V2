@@ -189,12 +189,5 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
             await persistenceDataContext.Save(submissionSummary, cancellationToken).ConfigureAwait(false);
         }
 
-        public async Task<SubmissionsSummaryModel> GetSubmissionWindowMetrics(short academicYear, byte collectionPeriod)
-        {
-            await persistenceDataContext.SubmissionSummaries.Where(metrics => new SubmissionsSummaryModel
-            {
-                YearToDatePayments = metrics.
-            })
-        }
     }
 }
