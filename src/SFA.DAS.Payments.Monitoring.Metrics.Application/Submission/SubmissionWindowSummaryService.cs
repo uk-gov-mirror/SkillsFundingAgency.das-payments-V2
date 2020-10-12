@@ -7,7 +7,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
 {
     public interface ISubmissionWindowSummaryService
     {
-        Task<(bool, SubmissionsSummaryModel)> ValidateSubmissionWindow(short academicYear, byte collectionPeriod);
+        Task<(bool IsValid, SubmissionsSummaryModel SubmissionsSummary)> ValidateSubmissionWindow(short academicYear, byte collectionPeriod);
     }
 
     public class SubmissionWindowSummaryService: ISubmissionWindowSummaryService
@@ -21,7 +21,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
             this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
-        public async Task<(bool, SubmissionsSummaryModel)> ValidateSubmissionWindow(short academicYear, byte collectionPeriod)
+        public async Task<(bool IsValid, SubmissionsSummaryModel SubmissionsSummary)> ValidateSubmissionWindow(short academicYear, byte collectionPeriod)
         {
             var model = await dataContext.GetSubmissionsSummary(academicYear, collectionPeriod);
             var submissionWindowSummary = factory.Create(academicYear, collectionPeriod, model);
