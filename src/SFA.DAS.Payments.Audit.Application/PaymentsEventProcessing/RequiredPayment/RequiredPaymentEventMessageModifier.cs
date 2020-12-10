@@ -14,6 +14,8 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.RequiredPay
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public Type EventType { get; } = typeof(IRequiredPaymentEvent);
+
         public object Modify(object applicationMessage)
         {
             var requiredPaymentEvent = applicationMessage as IRequiredPaymentEvent;

@@ -171,6 +171,9 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                 }
             }
 
+            //this is because we are handling *Model Types for most IHandleMessageBatches but actual messages are *Event types
+            genericTypes.Add(messageModifier.EventType);
+
             return genericTypes;
         }
 

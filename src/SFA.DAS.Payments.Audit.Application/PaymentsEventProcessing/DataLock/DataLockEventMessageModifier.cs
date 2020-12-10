@@ -14,6 +14,8 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.DataLock
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public Type EventType { get; } = typeof(DataLockEvent);
+
         public object Modify(object applicationMessage)
         {
             var dataLockEvent = applicationMessage as DataLockEvent;

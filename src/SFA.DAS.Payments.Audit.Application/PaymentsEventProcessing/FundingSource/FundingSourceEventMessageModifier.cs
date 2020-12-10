@@ -14,6 +14,8 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.FundingSour
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public Type EventType { get; } = typeof(IFundingSourcePaymentEvent);
+
         public object Modify(object applicationMessage)
         {
             var fundingSourceEvent = applicationMessage as IFundingSourcePaymentEvent;

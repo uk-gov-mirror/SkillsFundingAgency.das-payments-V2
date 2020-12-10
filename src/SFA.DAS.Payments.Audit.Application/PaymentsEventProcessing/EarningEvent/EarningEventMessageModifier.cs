@@ -13,6 +13,8 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.EarningEven
             this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
+        public Type EventType { get; } = typeof(EarningEvents.Messages.Events.EarningEvent);
+
         public object Modify(object applicationMessage)
         {
             var earningEvent = applicationMessage as EarningEvents.Messages.Events.EarningEvent;
