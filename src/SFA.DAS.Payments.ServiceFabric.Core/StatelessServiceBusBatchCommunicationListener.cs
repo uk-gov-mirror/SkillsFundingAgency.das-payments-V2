@@ -3,14 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using Autofac;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
-using Microsoft.Azure.ServiceBus.InteropExtensions;
 using Microsoft.Azure.ServiceBus.Management;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using SFA.DAS.Payments.Application.Infrastructure.Ioc;
@@ -82,7 +79,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             try
             {
                 //get class names that are subscribing to IHandleBatchMessages
-                List<Type> subscribedMessageTypes = GetBatchHandledMessageTypes();
+                var subscribedMessageTypes = GetBatchHandledMessageTypes();
                 if (!subscribedMessageTypes.Any()) return;
 
                 //GetCurrentSubscriptions
@@ -92,7 +89,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
 
                 foreach (var type in subscribedMessageTypes)
                 {
-                    if (!existingRules.Any(x => x.Name == type.Name))
+                    if (existingRules.All(x => x.Name != type.Name))
                     {
                         CreateNewSubscriptionRule(type, endpointName, cancellationToken);
                     }
@@ -139,7 +136,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                     ForwardTo = endpointName,
                     UserMetadata = endpointName,
                     EnableBatchedOperations = true,
-                    MaxDeliveryCount = Int32.MaxValue,
+                    MaxDeliveryCount = int.MaxValue,
                     EnableDeadLetteringOnFilterEvaluationExceptions = false,
                     LockDuration = TimeSpan.FromMinutes(5)
                 };
@@ -158,17 +155,16 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
 
         private List<Type> GetBatchHandledMessageTypes()
         {
-            List<Type> genericTypes = new List<Type>();
+            var genericTypes = new List<Type>();
 
             var types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes());
 
             foreach (var type in types)
             {
-                foreach (Type intType in type.GetInterfaces())
+                foreach (var intType in type.GetInterfaces())
                 {
-                    if (intType.IsGenericType && intType.GetGenericTypeDefinition()
-                        == typeof(IHandleMessageBatches<>))
+                    if (intType.IsGenericType && intType.GetGenericTypeDefinition() == typeof(IHandleMessageBatches<>))
                     {
                         genericTypes.Add(intType.GetGenericArguments()[0]);
                     }
@@ -178,9 +174,9 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             return genericTypes;
         }
 
-        private async Task<List<(Object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>> ReceiveMessages(BatchMessageReceiver messageReceiver, CancellationToken cancellationToken)
+        private async Task<List<(object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>> ReceiveMessages(BatchMessageReceiver messageReceiver, CancellationToken cancellationToken)
         {
-            var applicationMessages = new List<(Object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>();
+            var applicationMessages = new List<(object Message, BatchMessageReceiver Receiver, Message ReceivedMessage)>();
             var messages = await messageReceiver.ReceiveMessages(200, cancellationToken).ConfigureAwait(false);
             if (!messages.Any())
                 return applicationMessages;
@@ -211,7 +207,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             var messageReceivers = new List<BatchMessageReceiver>();
             messageReceivers.AddRange(Enumerable.Range(0, 3)
                 .Select(i => new BatchMessageReceiver(connection, EndpointName)));
-            var errorQueueSender = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
+            var _ = new MessageSender(connection, errorQueueName, RetryPolicy.Default);
             try
             {
                 while (!cancellationToken.IsCancellationRequested)
@@ -314,8 +310,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             return messageDeserializer.DeserializeMessage(message);
         }
 
-        protected async Task ProcessMessages(Type groupType, List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)> messages,
-            CancellationToken cancellationToken)
+        protected async Task ProcessMessages(Type groupType, List<(object Message, BatchMessageReceiver MessageReceiver, Message ReceivedMessage)> messages, CancellationToken cancellationToken)
         {
             try
             {
@@ -323,7 +318,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                 using (var containerScope = scopeFactory.CreateScope())
                 {
                     if (!containerScope.TryResolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType),
-                        out object handler))
+                        out var handler))
                     {
                         logger.LogError($"No handler found for message: {groupType.FullName}");
                         await Task.WhenAll(messages.Select(message => message.MessageReceiver.DeadLetter(message.ReceivedMessage)));
@@ -370,7 +365,7 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
                     using (var scope = scopeFactory.CreateScope())
                     {
                         if (!scope.TryResolve(typeof(IHandleMessageBatches<>).MakeGenericType(groupType),
-                            out object handler))
+                            out var handler))
                         {
                             logger.LogError($"No handler found for message: {groupType.FullName}");
                             await Task.WhenAll(messages.Select(message => message.MessageReceiver.DeadLetter(message.ReceivedMessage)));
@@ -399,32 +394,12 @@ namespace SFA.DAS.Payments.ServiceFabric.Core
             }
         }
 
-        private string GetMessagePayload(Message receivedMessage)
-        {
-            const string transportEncodingHeaderKey = "NServiceBus.Transport.Encoding";
-            var transportEncoding = receivedMessage.UserProperties.ContainsKey(transportEncodingHeaderKey)
-                ? (string)receivedMessage.UserProperties[transportEncodingHeaderKey]
-                : "application/octet-stream";
-            byte[] messageBody;
-            if (transportEncoding.Equals("wcf/byte-array", StringComparison.OrdinalIgnoreCase))
-            {
-                var doc = receivedMessage.GetBody<XmlElement>();
-                messageBody = Convert.FromBase64String(doc.InnerText);
-            }
-            else
-                messageBody = receivedMessage.Body;
-
-            var monitoringMessageJson = Encoding.UTF8.GetString(messageBody);
-            var sanitisedMessageJson = monitoringMessageJson
-                .Trim(Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble())
-                    .ToCharArray());
-            return sanitisedMessageJson;
-        }
-
-        public async Task CloseAsync(CancellationToken cancellationToken)
+        public Task CloseAsync(CancellationToken cancellationToken)
         {
             if (!startingCancellationToken.IsCancellationRequested)
                 startingCancellationToken = cancellationToken;
+            
+            return Task.CompletedTask;
         }
 
         public void Abort()

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
 using SFA.DAS.Payments.Audit.Application.Data.DataLock;
 using SFA.DAS.Payments.Audit.Application.Mapping.DataLock;
-using SFA.DAS.Payments.Core;
 using SFA.DAS.Payments.Model.Core.Audit;
 
 namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.DataLock
@@ -39,7 +38,7 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.DataLock
             {
                 if (!e.IsUniqueKeyConstraintException() && !e.IsDeadLockException()) throw;
                 logger.LogInfo($"Batch contained a duplicate DataLock.  Will store each individually and discard duplicate.");
-                await repository.SaveDataLocksIndividually(models.Select(model => mapper.Map(model)).ToList(), cancellationToken).ConfigureAwait(false);
+                await repository.SaveDataLocksIndividually(models, cancellationToken).ConfigureAwait(false);
             }
         }
     }

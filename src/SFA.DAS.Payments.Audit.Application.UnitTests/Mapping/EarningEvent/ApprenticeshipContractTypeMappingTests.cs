@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
-using SFA.DAS.Payments.Audit.Model;
 using SFA.DAS.Payments.EarningEvents.Messages.Events;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.Audit;
@@ -74,7 +73,7 @@ namespace SFA.DAS.Payments.Audit.Application.UnitTests.Mapping.EarningEvent
         [Test]
         public void Maps_ContractType()
         {
-            Mapper.Map<EarningEventModel>(PaymentEvent).ContractType.Should().Be(this.contractType);
+            Mapper.Map<EarningEventModel>(PaymentEvent).ContractType.Should().Be(contractType);
         }
     }
 }

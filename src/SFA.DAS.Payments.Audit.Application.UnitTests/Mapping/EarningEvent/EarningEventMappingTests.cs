@@ -5,7 +5,6 @@ using AutoMapper;
 using FluentAssertions;
 using NUnit.Framework;
 using SFA.DAS.Payments.Audit.Application.Mapping.EarningEvents;
-using SFA.DAS.Payments.Audit.Model;
 using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.Audit;
 

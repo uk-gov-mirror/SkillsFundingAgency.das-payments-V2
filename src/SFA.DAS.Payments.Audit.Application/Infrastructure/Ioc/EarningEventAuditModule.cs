@@ -9,18 +9,6 @@ namespace SFA.DAS.Payments.Audit.Application.Infrastructure.Ioc
     {
         protected override void Load(ContainerBuilder builder)
         {
-            builder.RegisterType<EarningEventProcessor>()
-                .As<IEarningEventProcessor>()
-                .InstancePerLifetimeScope();
-
-            builder.RegisterType<EarningEventSubmissionSucceededProcessor>()
-                .AsImplementedInterfaces()
-                .InstancePerLifetimeScope();
-
-            builder.RegisterType<EarningEventSubmissionFailedProcessor>()
-                .AsImplementedInterfaces()
-                .InstancePerLifetimeScope();
-
             builder.RegisterType<EarningEventRepository>()
                 .AsImplementedInterfaces()
                 .InstancePerDependency();
@@ -35,7 +23,6 @@ namespace SFA.DAS.Payments.Audit.Application.Infrastructure.Ioc
             builder.RegisterType<EarningsDuplicateEliminator>()
                 .As<IEarningsDuplicateEliminator>()
                 .InstancePerLifetimeScope();
-
         }
     }
 }
