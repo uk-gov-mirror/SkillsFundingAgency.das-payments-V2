@@ -13,11 +13,9 @@ namespace SFA.DAS.Payments.Audit.Application.Data.FundingSource
 {
     public interface IFundingSourceEventRepository
     {
-        Task SaveFundingSourceEvents(List<FundingSourceEventModel> fundingSourceEvents,
-            CancellationToken cancellationToken);
+        Task SaveFundingSourceEvents(List<FundingSourceEventModel> fundingSourceEvents, CancellationToken cancellationToken);
 
-        Task SaveFundingSourceEventsIndividually(List<FundingSourceEventModel> fundingSourceEvents,
-            CancellationToken cancellationToken);
+        Task SaveFundingSourceEventsIndividually(List<FundingSourceEventModel> fundingSourceEvents, CancellationToken cancellationToken);
     }
 
     public class FundingSourceEventRepository : IFundingSourceEventRepository
@@ -37,10 +35,10 @@ namespace SFA.DAS.Payments.Audit.Application.Data.FundingSource
         {
             using (var tx = await dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted, cancellationToken).ConfigureAwait(false))
             {
-                var bulkConfig = new BulkConfig
-                { SetOutputIdentity = false, BulkCopyTimeout = 60, PreserveInsertOrder = false };
-                await ((DbContext)dataContext).BulkInsertAsync(fundingSourceEvents, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
+                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, PreserveInsertOrder = false };
+                
+                await ((DbContext)dataContext).BulkInsertAsync(fundingSourceEvents, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
                 await tx.CommitAsync(cancellationToken);
             }
         }

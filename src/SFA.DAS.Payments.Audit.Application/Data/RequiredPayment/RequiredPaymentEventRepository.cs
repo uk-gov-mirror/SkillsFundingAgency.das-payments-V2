@@ -13,11 +13,9 @@ namespace SFA.DAS.Payments.Audit.Application.Data.RequiredPayment
 {
     public interface IRequiredPaymentEventRepository
     {
-        Task SaveRequiredPaymentEvents(List<RequiredPaymentEventModel> requiredPayments,
-            CancellationToken cancellationToken);
+        Task SaveRequiredPaymentEvents(List<RequiredPaymentEventModel> requiredPayments, CancellationToken cancellationToken);
 
-        Task SaveRequiredPaymentEventsIndividually(List<RequiredPaymentEventModel> requiredPayments,
-            CancellationToken cancellationToken);
+        Task SaveRequiredPaymentEventsIndividually(List<RequiredPaymentEventModel> requiredPayments, CancellationToken cancellationToken);
     }
 
     public class RequiredPaymentEventRepository : IRequiredPaymentEventRepository
@@ -37,10 +35,10 @@ namespace SFA.DAS.Payments.Audit.Application.Data.RequiredPayment
         {
             using (var tx = await dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted, cancellationToken).ConfigureAwait(false))
             {
-                var bulkConfig = new BulkConfig
-                { SetOutputIdentity = false, BulkCopyTimeout = 60, PreserveInsertOrder = false };
-                await ((DbContext)dataContext).BulkInsertAsync(requiredPayments, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
+                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, PreserveInsertOrder = false };
+
+                await ((DbContext)dataContext).BulkInsertAsync(requiredPayments, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
                 await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
         }

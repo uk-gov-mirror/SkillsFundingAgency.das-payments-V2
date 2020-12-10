@@ -35,7 +35,8 @@ namespace SFA.DAS.Payments.Audit.Application.Data.DataLock
         {
             using (var tx = await dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted, cancellationToken).ConfigureAwait(false))
             {
-                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 60, PreserveInsertOrder = false };
+                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, PreserveInsertOrder = false };
+                
                 var priceEpisodes = dataLockEvents
                     .SelectMany(dataLockEvent => dataLockEvent.PriceEpisodes)
                     .ToList();
@@ -47,19 +48,19 @@ namespace SFA.DAS.Payments.Audit.Application.Data.DataLock
                     .ToList();
                 var failures = dataLockEvents
                     .SelectMany(dataLockEvent => dataLockEvent.NonPayablePeriods
-                        .SelectMany(npp => npp.Failures))
+                    .SelectMany(npp => npp.Failures))
                     .ToList();
 
-                await ((DbContext)dataContext).BulkInsertAsync(dataLockEvents, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
-                await ((DbContext)dataContext).BulkInsertAsync(priceEpisodes, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
-                await ((DbContext)dataContext).BulkInsertAsync(payablePeriods, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
-                await ((DbContext)dataContext).BulkInsertAsync(nonPayablePeriods, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
-                await ((DbContext)dataContext).BulkInsertAsync(failures, bulkConfig, null, cancellationToken)
-                    .ConfigureAwait(false);
+                await ((DbContext)dataContext).BulkInsertAsync(dataLockEvents, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
+                await ((DbContext)dataContext).BulkInsertAsync(priceEpisodes, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
+                await ((DbContext)dataContext).BulkInsertAsync(payablePeriods, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
+                await ((DbContext)dataContext).BulkInsertAsync(nonPayablePeriods, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
+                await ((DbContext)dataContext).BulkInsertAsync(failures, bulkConfig, null, cancellationToken).ConfigureAwait(false);
+                
                 await tx.CommitAsync(cancellationToken).ConfigureAwait(false);
             }
         }
