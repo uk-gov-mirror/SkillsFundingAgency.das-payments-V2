@@ -11,31 +11,27 @@ using NUnit.Framework;
 using SFA.DAS.Payments.Audit.Application.Data.EarningEvent;
 using SFA.DAS.Payments.Audit.Application.Mapping.EarningEvents;
 using SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.EarningEvent;
-using SFA.DAS.Payments.EarningEvents.Messages.Events;
-using SFA.DAS.Payments.Model.Core;
 using SFA.DAS.Payments.Model.Core.Audit;
 using SFA.DAS.Payments.Model.Core.Entities;
-using SFA.DAS.Payments.Model.Core.Incentives;
-using SFA.DAS.Payments.Model.Core.OnProgramme;
 
 namespace SFA.DAS.Payments.Audit.Application.UnitTests.EarningEvent
 {
     [TestFixture]
     public class EarningEventStorageServiceTests
     {
-        private AutoMoqCore.AutoMoqer moqer;
+        private AutoMoqer moqer;
 
         [SetUp]
         public void SetUp()
         {
             moqer = new AutoMoqer();
             moqer.GetMock<IEarningEventMapper>()
-                .Setup(mapper => mapper.Map(It.IsAny<EarningEvents.Messages.Events.EarningEvent>()))
-                .Returns<EarningEvents.Messages.Events.EarningEvent>(earningEvent =>
+                .Setup(mapper => mapper.Map(It.IsAny<EarningEventModel>()))
+                .Returns<EarningEventModel>(earningEvent =>
                     new EarningEventModel { EventId = earningEvent.EventId });
             moqer.GetMock<IEarningsDuplicateEliminator>()
-                .Setup(x => x.RemoveDuplicates(It.IsAny<List<EarningEvents.Messages.Events.EarningEvent>>()))
-                .Returns<List<EarningEvents.Messages.Events.EarningEvent>>(items => items);
+                .Setup(x => x.RemoveDuplicates(It.IsAny<List<EarningEventModel>>()))
+                .Returns<List<EarningEventModel>>(items => items);
         }
 
         [Test]
@@ -48,7 +44,7 @@ namespace SFA.DAS.Payments.Audit.Application.UnitTests.EarningEvent
                 EventId = eventId,
                 ContractType = ContractType.Act1,
                 JobId = 123,
-                PriceEpisodes = new List<EarningEventPriceEpisodeModel> { new EarningEventPriceEpisodeModel {Id  = 1, EarningEventId = eventId, CompletionAmount = 3000, InstalmentAmount = 1000 } },
+                PriceEpisodes = new List<EarningEventPriceEpisodeModel> { new EarningEventPriceEpisodeModel { Id = 1, EarningEventId = eventId, CompletionAmount = 3000, InstalmentAmount = 1000 } },
                 Periods = new List<EarningEventPeriodModel> { new EarningEventPeriodModel { Id = 1, EarningEventId = eventId, PriceEpisodeIdentifier = "1/1/1234", TransactionType = TransactionType.Learning, Amount = 1000 } }
             };
 
@@ -77,7 +73,7 @@ namespace SFA.DAS.Payments.Audit.Application.UnitTests.EarningEvent
         [Test]
         public async Task Saves_Batch_Of_Act1_Earning_Events()
         {
-            var earnings = new List<EarningEvents.Messages.Events.EarningEvent>
+            var earnings = new List<EarningEventModel>
             {
                 CreateEarningEvent(null)
             };
@@ -87,40 +83,31 @@ namespace SFA.DAS.Payments.Audit.Application.UnitTests.EarningEvent
                 .Verify(x => x.SaveEarningEvents(It.Is<List<EarningEventModel>>(lst => lst.All(item => earnings.Any(earning => earning.EventId == item.EventId))), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        private EarningEvents.Messages.Events.EarningEvent CreateEarningEvent(
-            Action<EarningEvents.Messages.Events.EarningEvent> action)
+        private EarningEventModel CreateEarningEvent(Action<EarningEventModel> action)
         {
-            var earningEvent = new ApprenticeshipContractType1EarningEvent
+            var earningEvent = new EarningEventModel
             {
                 JobId = 123,
-                CollectionPeriod = new CollectionPeriod { AcademicYear = 1920, Period = 1 },
+                CollectionPeriod = 1,
+                AcademicYear = 1920,
                 Ukprn = 1234,
                 EventId = Guid.NewGuid(),
-                Learner = new Learner { Uln = 123456, ReferenceNumber = "learner ref" },
+                LearnerUln = 123456,
+                LearnerReferenceNumber = "learner ref",
                 EventTime = DateTimeOffset.Now,
                 IlrSubmissionDateTime = DateTime.Now,
                 SfaContributionPercentage = .95M,
                 AgreementId = null,
-                CollectionYear = 2020,
                 IlrFileName = "somefile.ilr",
-                IncentiveEarnings = new List<IncentiveEarning>
+                Periods = new List<EarningEventPeriodModel>
                 {
-                    new IncentiveEarning
+                    new EarningEventPeriodModel
                     {
-                        Type = IncentiveEarningType.First16To18EmployerIncentive,
-                        Periods = new List<EarningPeriod>
-                        {
-                            new EarningPeriod
-                            {
-                                Period = 1,
-                                Amount = 100,
-                            }
-                        }.AsReadOnly()
+                        DeliveryPeriod = 1,
+                        Amount = 100,
                     }
                 },
-                LearningAim = new LearningAim(),
-                OnProgrammeEarnings = new List<OnProgrammeEarning>(),
-                PriceEpisodes = new List<PriceEpisode>(),
+                PriceEpisodes = new List<EarningEventPriceEpisodeModel>(),
                 StartDate = DateTime.Today
             };
             action?.Invoke(earningEvent);
@@ -130,7 +117,7 @@ namespace SFA.DAS.Payments.Audit.Application.UnitTests.EarningEvent
         [Test]
         public async Task Removes_Duplicates_Earning_Events()
         {
-            var earnings = new List<EarningEvents.Messages.Events.EarningEvent>
+            var earnings = new List<EarningEventModel>
             {
                 CreateEarningEvent(null),
                 CreateEarningEvent(null),
@@ -139,7 +126,7 @@ namespace SFA.DAS.Payments.Audit.Application.UnitTests.EarningEvent
             var service = moqer.Create<EarningEventStorageService>();
             await service.StoreEarnings(earnings, CancellationToken.None);
             moqer.GetMock<IEarningsDuplicateEliminator>()
-                .Verify(x => x.RemoveDuplicates(It.IsAny<List<EarningEvents.Messages.Events.EarningEvent>>()), Times.Once);
+                .Verify(x => x.RemoveDuplicates(It.IsAny<List<EarningEventModel>>()), Times.Once);
         }
     }
 }

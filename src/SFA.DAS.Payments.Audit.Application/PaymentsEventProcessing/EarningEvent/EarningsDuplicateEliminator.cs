@@ -2,17 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
-using SFA.DAS.Payments.Audit.Application.Data.EarningEvent;
+using SFA.DAS.Payments.Model.Core.Audit;
 
 namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.EarningEvent
 {
     public interface IEarningsDuplicateEliminator
     {
-        List<EarningEvents.Messages.Events.EarningEvent> RemoveDuplicates(
-            List<EarningEvents.Messages.Events.EarningEvent> earningEvents);
+        List<EarningEventModel> RemoveDuplicates(List<EarningEventModel> earningEvents);
     }
 
-    public class EarningsDuplicateEliminator: IEarningsDuplicateEliminator
+    public class EarningsDuplicateEliminator : IEarningsDuplicateEliminator
     {
         private readonly IPaymentLogger logger;
 
@@ -21,7 +20,7 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.EarningEven
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public List<EarningEvents.Messages.Events.EarningEvent> RemoveDuplicates(List<EarningEvents.Messages.Events.EarningEvent> earningEvents)
+        public List<EarningEventModel> RemoveDuplicates(List<EarningEventModel> earningEvents)
         {
             logger.LogDebug($"Removing duplicates from batch. Batch size: {earningEvents.Count}");
             var deDuplicatedEvents = earningEvents
@@ -29,19 +28,19 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.EarningEven
                 {
                     earningEvent.Ukprn,
                     earningEvent.GetType().FullName,
-                    earningEvent.CollectionPeriod.Period,
-                    earningEvent.CollectionPeriod.AcademicYear,
-                    earningEvent.Learner.ReferenceNumber,
-                    earningEvent.Learner.Uln,
-                    earningEvent.LearningAim.Reference,
-                    earningEvent.LearningAim.ProgrammeType,
-                    earningEvent.LearningAim.StandardCode,
-                    earningEvent.LearningAim.FrameworkCode,
-                    earningEvent.LearningAim.PathwayCode,
-                    earningEvent.LearningAim.FundingLineType,
-                    earningEvent.LearningAim.StartDate,
+                    earningEvent.CollectionPeriod,
+                    earningEvent.AcademicYear,
+                    earningEvent.LearnerReferenceNumber,
+                    earningEvent.LearnerUln,
+                    earningEvent.LearningAimReference,
+                    earningEvent.LearningAimProgrammeType,
+                    earningEvent.LearningAimStandardCode,
+                    earningEvent.LearningAimFrameworkCode,
+                    earningEvent.LearningAimPathwayCode,
+                    earningEvent.LearningAimFundingLineType,
+                    earningEvent.LearningAimSequenceNumber,
+                    earningEvent.StartDate,
                     earningEvent.JobId,
-                    earningEvent.LearningAim.SequenceNumber,
                 })
                 .Select(group => group.FirstOrDefault())
                 .Where(earningEvent => earningEvent != null)
