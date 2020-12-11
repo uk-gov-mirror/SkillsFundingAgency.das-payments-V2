@@ -4,6 +4,7 @@ using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using EFCore.BulkExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
@@ -35,7 +36,8 @@ namespace SFA.DAS.Payments.Audit.Application.Data.FundingSource
         {
             using (var tx = await dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted, cancellationToken).ConfigureAwait(false))
             {
-                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, PreserveInsertOrder = false };
+                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, 
+                    PreserveInsertOrder = false, SqlBulkCopyOptions = SqlBulkCopyOptions.TableLock };
                 
                 await ((DbContext)dataContext).BulkInsertAsync(fundingSourceEvents, bulkConfig, null, cancellationToken).ConfigureAwait(false);
                 

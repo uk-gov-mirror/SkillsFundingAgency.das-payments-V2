@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EFCore.BulkExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using SFA.DAS.Payments.Application.Infrastructure.Logging;
@@ -35,7 +36,8 @@ namespace SFA.DAS.Payments.Audit.Application.Data.DataLock
         {
             using (var tx = await dataContext.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted, cancellationToken).ConfigureAwait(false))
             {
-                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, PreserveInsertOrder = false };
+                var bulkConfig = new BulkConfig { SetOutputIdentity = false, BulkCopyTimeout = 270, 
+                    PreserveInsertOrder = false, SqlBulkCopyOptions = SqlBulkCopyOptions.TableLock };
                 
                 var priceEpisodes = dataLockEvents
                     .SelectMany(dataLockEvent => dataLockEvent.PriceEpisodes)
