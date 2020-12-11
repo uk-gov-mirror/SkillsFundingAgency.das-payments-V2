@@ -19,6 +19,10 @@ namespace SFA.DAS.Payments.Audit.Application.Infrastructure.Ioc
             builder.RegisterType<DataLockEventStorageService>()
                 .As<IDataLockEventStorageService>()
                 .InstancePerLifetimeScope();
+
+            builder.RegisterType<DataLockDuplicateEliminator>()
+                .As<IDataLockDuplicateEliminator>()
+                .InstancePerLifetimeScope();
         }
     }
 }

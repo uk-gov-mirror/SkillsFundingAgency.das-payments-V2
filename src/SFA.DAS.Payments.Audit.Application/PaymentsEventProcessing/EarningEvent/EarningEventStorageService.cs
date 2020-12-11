@@ -39,6 +39,10 @@ namespace SFA.DAS.Payments.Audit.Application.PaymentsEventProcessing.EarningEven
             catch (Exception e)
             {
                 if (!e.IsUniqueKeyConstraintException() && !e.IsDeadLockException()) throw;
+                
+                if (e.IsDeadLockException())
+                    logger.LogInfo("Batch was deadlocked");
+
                 logger.LogInfo("Batch contained a duplicate earning.  Will store each individually and discard duplicate.");
                 await repository.SaveEarningsIndividually(deDuplicatedmodels, cancellationToken).ConfigureAwait(false);
             }
