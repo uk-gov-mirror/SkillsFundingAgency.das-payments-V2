@@ -192,20 +192,20 @@ stages:
         projects: '**/*unittest*.csproj'
         arguments: '--configuration ${{ parameters.BuildConfiguration }} --no-restore -p:version="$(Build.BuildNumber)" -p:FileVersion="$(Build.BuildNumber)"'
 
-#    - task: DotNetCoreCLI@2
-#      displayName: 'dotnet test UnitTest Projects'
-#      inputs:
-#        command: test
-#        projects: '**/*unittest*.csproj'
-#        arguments: '--filter FullyQualifiedName~UnitTests'
-
     - task: DotNetCoreCLI@2
-      displayName: Run .net Core Unit Tests
+      displayName: 'dotnet test UnitTest Projects'
       inputs:
         command: test
         projects: '**/*unittest*.csproj'
-        arguments: '--filter FullyQualifiedName~UnitTests --no-build --no-restore'
-        # /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+        arguments: '--filter FullyQualifiedName~UnitTests'
+
+    #- task: DotNetCoreCLI@2
+    #  displayName: Run .net Core Unit Tests
+    #  inputs:
+    #    command: test
+    #    projects: '**/*unittest*.csproj'
+    #    arguments: '--filter FullyQualifiedName~UnitTests --no-build --no-restore'
+    #    # /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
 
 #******************************************************************************** 
 #********************************************************************************
