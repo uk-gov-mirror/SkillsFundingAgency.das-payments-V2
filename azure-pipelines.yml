@@ -139,7 +139,7 @@ stages:
       displayName: 'Build sln'
       inputs:
         msbuildArchitecture: x64
-        platform: '$($(Build.Platform))'
+        platform: '$(Build.Platform)'
         configuration: '${{ parameters.BuildConfiguration }}'
         msbuildArguments: '/p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
         clean: true
