@@ -204,7 +204,8 @@ stages:
       inputs:
         command: test
         projects: '**/*unittest*.csproj'
-        arguments: '--filter FullyQualifiedName~UnitTests --no-build --no-restore /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
+        arguments: '--filter FullyQualifiedName~UnitTests --no-build --no-restore'
+        # /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
 
 #******************************************************************************** 
 #********************************************************************************
