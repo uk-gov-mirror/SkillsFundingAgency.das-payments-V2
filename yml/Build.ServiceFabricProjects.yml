@@ -71,7 +71,7 @@ steps:
     msbuildArchitecture: x64
     platform: '${{ parameters.ServiceFabricBuildPlatform }}'
     configuration: '${{ parameters.BuildConfiguration }}'
-    msbuildArguments: '/t:Package /p:PackageLocation=$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\ApplicationPackage  /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber) -p:SkipInvalidConfigurations=true'
+    msbuildArguments: '/t:Package /p:PackageLocation="$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\ApplicationPackage" /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber) -p:SkipInvalidConfigurations=true'
     clean: false
     maximumCpuCount: true
     restoreNugetPackages: false

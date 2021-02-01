@@ -190,7 +190,7 @@ stages:
       inputs:
         command: 'build'
         projects: '**/*unittest*.csproj'
-        arguments: '--configuration ${{ parameters.BuildConfiguration }} --no-restore -p:version="$(GitVersion.AssemblySemVer)" -p:FileVersion="$(GitVersion.AssemblySemFileVer)"'
+        arguments: '--configuration ${{ parameters.BuildConfiguration }} --no-restore -p:version="$(Build.BuildNumber)" -p:FileVersion="$(Build.BuildNumber)"'
 
 #    - task: DotNetCoreCLI@2
 #      displayName: 'dotnet test UnitTest Projects'
@@ -302,7 +302,6 @@ stages:
         ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\ProviderAdjustments '
         BuildConfiguration: '${{ parameters.BuildConfiguration }}'
         ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
-
 
     # - task: DotNetCoreCLI@2
     #   displayName: 'Build Period End Project'
