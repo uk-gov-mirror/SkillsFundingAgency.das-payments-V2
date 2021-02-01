@@ -30,7 +30,7 @@ steps:
 # Display Variables
 #********************************************************************************   
 - task: PowerShell@2
-  displayName: 'Display Build Number variables'
+  displayName: ': ${{ parameters.SPProjectName }} : Display Build Number variables'
   continueOnError: true  
   inputs:
     targetType: 'inline'
@@ -47,11 +47,12 @@ steps:
 - powershell: |
         $Filter = "ApplicationParameters";
         $ApplicationParametersFolder = Get-ChildItem -Directory -recurse   | Where {$_.Name.ToLower() -eq $Filter.ToLower() };
+        $ApplicationParametersFolder;
         Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.1Node.xml" -Force;
         Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.5Node.xml" -Force;
 
   workingDirectory: '$(ServiceFabricProjectLocation)\'
-  displayName: 'Generate Fake Application Parameters Node Config Files'
+  displayName: '${{ parameters.SPProjectName }} : Generate Fake Application Parameters file'
 
 #********************************************************************************
 # Build SF PRoject and Output to Artifact Folder
@@ -65,7 +66,7 @@ steps:
 #      arguments: '--configuration ${{ parameters.BuildConfiguration }} --no-restore -p:version="$(GitVersion.AssemblySemVer)" -p:FileVersion="$(GitVersion.AssemblySemFileVer)"'
 
 - task: MSBuild@1
-  displayName: 'Build and Package - SF : ${{ parameters.SPProjectName }}'
+  displayName: '${{ parameters.SPProjectName }} : Build and Package - SF Project'
   inputs:
     solution: '${{ parameters.ServiceFabricProjectLocation }}\**\*.sfproj'
     msbuildArchitecture: x64
@@ -79,7 +80,7 @@ steps:
     createLogFile: true
 
 - task: CopyFiles@2
-  displayName: 'Copy Files - ServiceFabric - ApplicationParameters'
+  displayName: '${{ parameters.SPProjectName }} : Copy Files - ServiceFabric - ApplicationParameters'
   inputs:
     SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
     Contents: '**\ApplicationParameters\Cloud.xml'
@@ -89,7 +90,7 @@ steps:
 
 - task: CopyFiles@2  #This should not bee needed.
   enabled: false
-  displayName: 'Copy Files - ServiceFabric - PublishProfiles '
+  displayName: '${{ parameters.SPProjectName }} : Copy Files - ServiceFabric - PublishProfiles '
   inputs:
     SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
     Contents: '**\ApplicationParameters\Cloud.xml'
