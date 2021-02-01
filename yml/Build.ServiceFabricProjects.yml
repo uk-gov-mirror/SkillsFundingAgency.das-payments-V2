@@ -14,7 +14,7 @@ parameters:
   type: string
 
 - name: 'ArtifactLocation'
-  default: 'SFProject1'
+  default: '$(build.artifactstagingdirectory)\ServiceFabric\ProviderAdjustments'
   type: string
 
 - name: 'BuildConfiguration'
@@ -30,7 +30,7 @@ steps:
 # Display Variables
 #********************************************************************************   
 - task: PowerShell@2
-  displayName: ': ${{ parameters.SPProjectName }} : Display Build Number variables'
+  displayName: '${{ parameters.SPProjectName }} : Display Build Number variables'
   continueOnError: true  
   inputs:
     targetType: 'inline'
@@ -51,7 +51,7 @@ steps:
         Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.1Node.xml" -Force;
         Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.5Node.xml" -Force;
 
-  workingDirectory: '$(ServiceFabricProjectLocation)\'
+  workingDirectory: '${{ parameters.ServiceFabricProjectLocation }}\'
   displayName: '${{ parameters.SPProjectName }} : Generate Fake Application Parameters file'
 
 #********************************************************************************
@@ -72,7 +72,7 @@ steps:
     msbuildArchitecture: x64
     platform: '${{ parameters.ServiceFabricBuildPlatform }}'
     configuration: '${{ parameters.BuildConfiguration }}'
-    msbuildArguments: '/t:Package /p:PackageLocation="$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\ApplicationPackage" /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber) -p:SkipInvalidConfigurations=true'
+    msbuildArguments: '/t:Package /p:PackageLocation="${{ parameters.ArtifactLocation}}\ApplicationPackage" /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber) -p:SkipInvalidConfigurations=true'
     clean: false
     maximumCpuCount: true
     restoreNugetPackages: false
@@ -84,7 +84,7 @@ steps:
   inputs:
     SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
     Contents: '**\ApplicationParameters\Cloud.xml'
-    TargetFolder: '$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\ApplicationParameters'
+    TargetFolder: '${{ parameters.ArtifactLocation}}\ApplicationParameters'
     CleanTargetFolder: true
     flattenFolders: true
 
@@ -93,7 +93,7 @@ steps:
   displayName: '${{ parameters.SPProjectName }} : Copy Files - ServiceFabric - PublishProfiles '
   inputs:
     SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
-    Contents: '**\ApplicationParameters\Cloud.xml'
-    TargetFolder: '$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\PublishProfiles '
+    Contents: '**\PublishProfiles\Cloud.xml'
+    TargetFolder: '${{ parameters.ArtifactLocation}}\PublishProfiles  '
     CleanTargetFolder: true
     flattenFolders: true
