@@ -21,7 +21,7 @@ parameters:
   type: string
   default: 'Release'
 
-- name: ' ServiceFabricBuildPlatform'
+- name: 'ServiceFabricBuildPlatform'
   type: string
   default: 'x64'
 
