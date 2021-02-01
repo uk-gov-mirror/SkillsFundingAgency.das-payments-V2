@@ -4,6 +4,11 @@ name: ${{ parameters.VersionNumberMajor }}.${{ parameters.VersionNumberMinor }}$
 #- repo: self
 #  fetchDepth: 15
 
+trigger:
+  branches:
+    include:
+     - feature/BuildPool
+  
 parameters:
 - name: VersionNumberMajor
   displayName: 'Version Number : Major'
@@ -40,10 +45,8 @@ parameters:
   - 'IsBuildServer_Old'
   - 'IsBuildServer_TEST'
 
-
-
-variables:  
-  ServiceFabricProjectFolderNames: ['SFA.DAS.Payments.EarningEvents.ServiceFabric', 'SFA.DAS.Payments.FundingSource.ServiceFabric', 'SFA.DAS.Payments.RequiredPayments.ServiceFabric', 'SFA.DAS.Payments.ProviderPayments.ServiceFabric', 'SFA.DAS.Payments.Monitoring.ServiceFabric', 'SFA.DAS.Payments.Audit.ServiceFabric', 'SFA.DAS.Payments.DataLocks.ServiceFabric']
+#variables:  
+  #ServiceFabricProjectFolderNames: ['SFA.DAS.Payments.EarningEvents.ServiceFabric', 'SFA.DAS.Payments.FundingSource.ServiceFabric', 'SFA.DAS.Payments.RequiredPayments.ServiceFabric', 'SFA.DAS.Payments.ProviderPayments.ServiceFabric', 'SFA.DAS.Payments.Monitoring.ServiceFabric', 'SFA.DAS.Payments.Audit.ServiceFabric', 'SFA.DAS.Payments.DataLocks.ServiceFabric']
   #PrivateSettingsCheckerURL: 'https://raw.githubusercontent.com/SkillsFundingAgency/DC-Tools/master/Scripts/PrivateSettingsChecker.ps1'
 
 stages:
@@ -61,14 +64,12 @@ stages:
       "Solution": 'src\**\*.sln'
       "SF.ArtifactRootFolder": 'ServiceFabric'
 
-
     pool:
       name: "${{ parameters.BuildPool }}"
       demands:
       - "${{ parameters.BuildPoolDemand }}"
 
     steps:
-
 #********************************************************************************
 # Install require stuff
 #********************************************************************************         
@@ -357,7 +358,7 @@ stages:
         script: |
             (gci env:*).GetEnumerator() | Where-Object {$_.Name -Like "*PublishArtifact_*" } | Sort-Object Name | ForEach {Write-Host "Name: $($_.Name) | Value : $($_.Value)"}
 
-*****************************************************************************
+#********************************************************************************
 # Generate Code Coverage Report and Publish
 #********************************************************************************
 # need to add Nuget PAckage 'coverlet.msbuild' to  Test Projects.
