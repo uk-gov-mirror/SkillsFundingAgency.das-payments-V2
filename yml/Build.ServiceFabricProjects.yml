@@ -49,8 +49,8 @@ steps:
         $Filter = "ApplicationParameters";
         $ApplicationParametersFolder = Get-ChildItem -Directory -recurse   | Where {$_.Name.ToLower() -eq $Filter.ToLower() };
         $ApplicationParametersFolder;
-        Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.1Node.xml" -Force;
-        Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.5Node.xml" -Force;
+        Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "Local.1Node.xml" -Force;
+        Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "Local.5Node.xml" -Force;
 
   workingDirectory: '${{ parameters.ServiceFabricProjectLocation }}'
   displayName: '${{ parameters.SPProjectName }} : Generate Fake Application Parameters file'
