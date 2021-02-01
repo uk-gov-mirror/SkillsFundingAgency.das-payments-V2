@@ -39,6 +39,7 @@ steps:
         Write-Host "ServiceFabricProjectLocation : ${{ parameters.ServiceFabricProjectLocation }}";
         Write-Host "ArtifactFolderName : ${{ parameters.ArtifactLocation }}";
         Write-Host "BuildConfiguration : ${{ parameters.BuildConfiguration }}";
+        Write-Host "ServiceFabricBuildPlatform : ${{ parameters.ServiceFabricBuildPlatform }}";
 
 #********************************************************************************
 # Copy Application Parameters Local Node xml files 
@@ -51,7 +52,7 @@ steps:
         Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.1Node.xml" -Force;
         Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "${{ parameters.ArtifactLocation }}\Local.5Node.xml" -Force;
 
-  workingDirectory: '${{ parameters.ServiceFabricProjectLocation }}\'
+  workingDirectory: '${{ parameters.ServiceFabricProjectLocation }}'
   displayName: '${{ parameters.SPProjectName }} : Generate Fake Application Parameters file'
 
 #********************************************************************************
