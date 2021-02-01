@@ -1,0 +1,100 @@
+# File: yml/build.yml
+
+#********************************************************************************
+# Build Application and put into Afticats.
+#********************************************************************************
+
+parameters:
+- name: 'SPProjectName'
+  default: 'SP Project Name'
+  type: string
+
+- name: 'ServiceFabricProjectLocation'
+  default: '$(Build.SourcesDirectory)/src/Project/Folder/Here'
+  type: string
+
+- name: 'ArtifactLocation'
+  default: 'SFProject1'
+  type: string
+
+- name: 'BuildConfiguration'
+  type: string
+  default: 'Release'
+
+- name: ' ServiceFabricBuildPlatform'
+  type: string
+  default: 'x64'
+
+
+  steps:
+
+#********************************************************************************
+# Display Variables
+#********************************************************************************   
+    - task: PowerShell@2
+      displayName: 'Display Build Number variables'
+      continueOnError: true  
+      inputs:
+        targetType: 'inline'
+        script: |
+           Write-Host "SPProjectName : ${{ parameters.SPProjectName }}";
+           Write-Host "ServiceFabricProjectLocation : ${{ parameters.ServiceFabricProjectLocation }}";
+           Write-Host "ArtifactFolderName : ${{ parameters.ArtifactFolderName }}";
+           Write-Host "BuildConfiguration : ${{ parameters.BuildConfiguration }}";
+
+#********************************************************************************
+# Copy Application Parameters Local Node xml files 
+#********************************************************************************   
+# This should not bee needed. Uplift to 1.6.10 or 1.7 SF Packing in SF Project.
+    - powershell: |
+           $Filter = "ApplicationParameters";
+           $ApplicationParametersFolder = Get-ChildItem -Directory -recurse   | Where {$_.Name.ToLower() -eq $Filter.ToLower() };
+           Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\\Local.1Node.xml" -Force;
+           Copy-Item "$($ApplicationParametersFolder.FullName)\Cloud.xml" "$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\\Local.5Node.xml" -Force;
+ 
+      workingDirectory: '$(ServiceFabricProjectLocation)\'
+      displayName: 'Generate Fake Application Parameters Node Config Files'
+
+#********************************************************************************
+# Build SF PRoject and Output to Artifact Folder
+#********************************************************************************             
+  #  - task: DotNetCoreCLI@2
+  #    enabled: false
+  #    displayName: 'Build SF Project : '
+  #    inputs:
+  #      command: 'build'
+  #      projects: '**/*.csproj'
+  #      arguments: '--configuration ${{ parameters.BuildConfiguration }} --no-restore -p:version="$(GitVersion.AssemblySemVer)" -p:FileVersion="$(GitVersion.AssemblySemFileVer)"'
+  
+    - task: MSBuild@1
+      displayName: 'Build and Package - SF : ${{ parameters.SPProjectName }}'
+      inputs:
+        solution: '${{ parameters.ServiceFabricProjectLocation }}\**\*.sfproj'
+        msbuildArchitecture: x64
+        platform: '${{ parameters.ServiceFabricBuildPlatform }}'
+        configuration: '${{ parameters.BuildConfiguration }}'
+        msbuildArguments: '/t:Package /p:PackageLocation=$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\ApplicationPackage  /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber) -p:SkipInvalidConfigurations=true'
+        clean: false
+        maximumCpuCount: true
+        restoreNugetPackages: false
+        logProjectEvents: true
+        createLogFile: true
+
+    - task: CopyFiles@2
+      displayName: 'Copy Files - ServiceFabric - ApplicationParameters'
+      inputs:
+        SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
+        Contents: '**\ApplicationParameters\Cloud.xml'
+        TargetFolder: '$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\ApplicationParameters'
+        CleanTargetFolder: true
+        flattenFolders: true
+
+    - task: CopyFiles@2  #This should not bee needed.
+      enabled: false
+      displayName: 'Copy Files - ServiceFabric - PublishProfiles '
+      inputs:
+        SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
+        Contents: '**\ApplicationParameters\Cloud.xml'
+        TargetFolder: '$(build.artifactstagingdirectory)\${{ parameters.ArtifactLocation }}\PublishProfiles '
+        CleanTargetFolder: true
+        flattenFolders: true

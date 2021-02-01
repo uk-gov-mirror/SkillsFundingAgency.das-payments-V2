@@ -1,164 +1,521 @@
-name: $(VersionNumberMajor).$(VersionNumberMinor)$(Rev:.rrrr)
+name: ${{ parameters.VersionNumberMajor }}.${{ parameters.VersionNumberMinor }}$(Rev:.rrrr)
 
-resources:
-- repo: self
-  fetchDepth: 15
+#resources:
+#- repo: self
+#  fetchDepth: 15
+
+parameters:
+- name: VersionNumberMajor
+  displayName: 'Version Number : Major'
+  type: string
+  default: '0'  
+- name: VersionNumberMinor
+  displayName: 'Version Number : Minor'
+  type: string
+  default: '0'  
+  
+- name: buildConfiguration
+  displayName: Release or Debug
+  type: string
+  default: Release
+  values:
+  - Release
+  - Debug
+  
+- name: BuildPool
+  displayName: 'Build Pool'
+  type: string
+  default: 'DCT Build Pool'
+  values:
+  - 'DCT Build Pool'
+  - 'DCT'
+  
+- name: BuildPoolDemand
+  displayName: 'Build Pool Demand'
+  type: string
+  default: 'IsBuildServer'
+  values:
+  - 'IsBuildServer'
+  - 'IsBuildServerDAS'
+  - 'IsBuildServer_Old'
+  - 'IsBuildServer_TEST'
+
+
 
 variables:  
-  VersionNumberMajor: '0'
-  VersionNumberMinor: '0'
-  BuildConfiguration: 'Release'
-  BuildPlatform: 'Any CPU'
-  BuildPlatformX64: 'x64'  
   ServiceFabricProjectFolderNames: ['SFA.DAS.Payments.EarningEvents.ServiceFabric', 'SFA.DAS.Payments.FundingSource.ServiceFabric', 'SFA.DAS.Payments.RequiredPayments.ServiceFabric', 'SFA.DAS.Payments.ProviderPayments.ServiceFabric', 'SFA.DAS.Payments.Monitoring.ServiceFabric', 'SFA.DAS.Payments.Audit.ServiceFabric', 'SFA.DAS.Payments.DataLocks.ServiceFabric']
-  PrivateSettingsCheckerURL: 'https://raw.githubusercontent.com/SkillsFundingAgency/DC-Tools/master/Scripts/PrivateSettingsChecker.ps1'
+  #PrivateSettingsCheckerURL: 'https://raw.githubusercontent.com/SkillsFundingAgency/DC-Tools/master/Scripts/PrivateSettingsChecker.ps1'
 
-pool:
-  name: DCT
-  demands:
-  - IsBuildServer
-  - IsBuildServerDAS
-  - msbuild
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:  
+  - job: Build
+    displayName: Build    
+    variables:
+      "Build.Platform": 'Any CPU'
+      "Build.PlatformX64": 'x64'  
+      "Nuget.Feed": 'dct-pkg'  
+      "Nuget.Version": '4.8.0'
+      "DotnetCore.Version": '2.2.x'
+      "Solution": 'src\**\*.sln'
+      "SF.ArtifactRootFolder": 'ServiceFabric'
 
-#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
-#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
-#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
 
-steps:
-- task: DotNetCoreInstaller@0
-  displayName: 'Use .NET Core sdk 2.2.106'
-  inputs:
-    version: 2.2.106
+    pool:
+      name: "${{ parameters.BuildPool }}"
+      demands:
+      - "${{ parameters.BuildPoolDemand }}"
 
-- task: NuGetToolInstaller@0
-  displayName: 'Use NuGet <=4.8.0'
-  inputs:
-    versionSpec: '<=4.8.0'
+    steps:
 
-- powershell: |
-   $WebClient = New-Object System.Net.WebClient
-   $WebClient.DownloadFile("$(PrivateSettingsCheckerURL)","$env:BUILD_REPOSITORY_LOCALPATH\src\PrivateSettingsChecker.ps1")
-   write-host "download finished"
-   
-  workingDirectory: '$(System.DefaultWorkingDirectory)/src/'
-  displayName: 'Download Private Settings Checker powershell script from Github'
+#********************************************************************************
+# Install require stuff
+#********************************************************************************         
+    #- task: DotNetCoreInstaller@0
+    #  displayName: 'Use .NET Core sdk 2.2.106'
+    #  inputs:
+    #    version: 2.2.106
 
-- task: PowerShell@2
-  displayName: 'Generate missing Private Setting files'
-  inputs:
-    targetType: filePath
-    filePath: './src\PrivateSettingsChecker.ps1'
-    workingDirectory: '$(System.DefaultWorkingDirectory)/src/'
+    - task: UseDotNet@2
+      displayName: 'Use .NET Core sdk : $(DotnetCore.Version)'
+      inputs:
+        packageType: sdk
+        version: $(DotnetCore.Version)
+        performMultiLevelLookup: true        
 
-- task: NuGetCommand@2
-  displayName: 'NuGet restore'
-  inputs:
-    vstsFeed: '1d5deb2d-cf8b-4bb1-b147-d13bc246e3f4'
+    - task: NuGetToolInstaller@0
+      displayName: 'Use NuGet : $(Nuget.Version)'
+      inputs:
+        versionSpec: '<= $(Nuget.Version)'
+        
+    - powershell: |
+          $WebClient = New-Object System.Net.WebClient
+          $WebClient.DownloadFile("$(PrivateSettingsCheckerURL)","$env:BUILD_REPOSITORY_LOCALPATH\src\PrivateSettingsChecker.ps1")
+          write-host "download finished"
+      
+      workingDirectory: '$(System.DefaultWorkingDirectory)/src/'
+      displayName: 'Download Private Settings Checker powershell script from Github'
+      enabled: false
 
-- task: MSBuild@1
-  displayName: 'Build sln'
-  inputs:
-    msbuildArchitecture: x64
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-    msbuildArguments: '/p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
-    clean: true
-    maximumCpuCount: true
-    logProjectEvents: true
-    createLogFile: true
-
-- task: MSBuild@1
-  displayName: 'Build Database Project copy'
-  inputs:
-    solution: '**/SFA.DAS.Payments.Database.sqlproj'
-    platform: '$(BuildPlatform)'
-    configuration: '$(BuildConfiguration)'
-    msbuildArguments: '/p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
-    clean: true
-    maximumCpuCount: true
-    logProjectEvents: true
-    createLogFile: true
-  enabled: false
-
-- task: CopyFiles@2
-  displayName: 'Copy Database Files to: Artifact Databases Directory'
-  inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)/src/'
-    Contents: '**\*.dacpac'
-    TargetFolder: '$(build.artifactstagingdirectory)\Databases'
-    flattenFolders: true
-
-- task: CopyFiles@2
-  displayName: 'Copy Database Files to: Artifact AcceptanceTests'
-  inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)/src/'
-    Contents: |
-     **\*AcceptanceTests*\**\bin\$(BuildConfiguration)\**
+    - task: PowerShell@2
+      displayName: 'Generate missing Private Setting files'
+      inputs:
+        targetType: filePath
+        filePath: './src\PrivateSettingsChecker.ps1'
+        workingDirectory: '$(System.DefaultWorkingDirectory)/src/'
+      enabled: false
      
-     
-    TargetFolder: '$(build.artifactstagingdirectory)\AcceptanceTests'
-    CleanTargetFolder: true
+#********************************************************************************
+# Display Variables
+#********************************************************************************   
+    - task: PowerShell@2
+      enabled: true
+      name: DislayAllVariables2
+      displayName: 'Display all variables'
+      continueOnError: true  
+      inputs:
+        targetType: 'inline'
+        script: |
+            (gci env:*).GetEnumerator() | Sort-Object Name | ForEach {Write-Host "Name: $($_.Name) | Value : $($_.Value)"}
 
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet build UnitTest Projects'
-  inputs:
-    projects: '**/*unittest*.csproj'
+#********************************************************************************
+# Restore and Build
+#********************************************************************************   
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet restore'
+      inputs:
+        command: restore
+        projects: '**\*.csproj'
+        vstsFeed: '$(Nuget.Feed)'
 
-- task: DotNetCoreCLI@2
-  displayName: 'dotnet test UnitTest Projects'
-  inputs:
-    command: test
-    projects: '**/*unittest*.csproj'
-    arguments: '--filter FullyQualifiedName~UnitTests'
+    - task: NuGetCommand@2
+      displayName: 'NuGet restore'
+      inputs:
+        vstsFeed: '$(Nuget.Feed)'
 
-#Task group has not been exported, task groups are not supported yet
+    - task: MSBuild@1
+      displayName: 'Build sln'
+      inputs:
+        msbuildArchitecture: x64
+        platform: '$($(Build.Platform))'
+        configuration: '${{ parameters.BuildConfiguration }}'
+        msbuildArguments: '/p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
+        clean: true
+        maximumCpuCount: true
+        logProjectEvents: true
+        createLogFile: true
 
-#Task group has not been exported, task groups are not supported yet
+    ## This should be done as part of sln build!!        
+    - task: MSBuild@1
+      displayName: 'Build Database Project copy'
+      inputs:
+        solution: '**/SFA.DAS.Payments.Database.sqlproj'
+        platform: '$($(Build.Platform))'
+        configuration: '${{ parameters.BuildConfiguration }}'
+        msbuildArguments: '/p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
+        clean: true
+        maximumCpuCount: true
+        logProjectEvents: true
+        createLogFile: true
+      enabled: false
 
-#Task group has not been exported, task groups are not supported yet
+#********************************************************************************
+# Copy Files into Aftifact Folder before test.
+#********************************************************************************         
+    - task: CopyFiles@2
+      displayName: 'Copy Database Files to: Artifact Databases Directory'
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/src/'
+        Contents: '**\*.dacpac'
+        TargetFolder: '$(build.artifactstagingdirectory)\Databases'
+        flattenFolders: true
 
-#Task group has not been exported, task groups are not supported yet
+    - task: CopyFiles@2
+      displayName: 'Acceptance Tests Files to: Artifact AcceptanceTests'
+      inputs:
+        SourceFolder: '$(System.DefaultWorkingDirectory)/src/'
+        Contents: |
+          **\*AcceptanceTests*\**\bin\${{ parameters.BuildConfiguration }}\**
+        
+        TargetFolder: '$(build.artifactstagingdirectory)\AcceptanceTests'
+        CleanTargetFolder: true
 
-#Task group has not been exported, task groups are not supported yet
+#********************************************************************************
+# Build and Unit Tests
+#********************************************************************************
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Unit Test Projects'
+      inputs:
+        command: 'build'
+        projects: '**/*unittest*.csproj'
+        arguments: '--configuration ${{ parameters.BuildConfiguration }} --no-restore -p:version="$(GitVersion.AssemblySemVer)" -p:FileVersion="$(GitVersion.AssemblySemFileVer)"'
 
-#Task group has not been exported, task groups are not supported yet
+#    - task: DotNetCoreCLI@2
+#      displayName: 'dotnet test UnitTest Projects'
+#      inputs:
+#        command: test
+#        projects: '**/*unittest*.csproj'
+#        arguments: '--filter FullyQualifiedName~UnitTests'
 
-#Task group has not been exported, task groups are not supported yet
+    - task: DotNetCoreCLI@2
+      displayName: Run .net Core Unit Tests
+      inputs:
+        command: test
+        projects: '**/*unittest*.csproj'
+        arguments: '--filter FullyQualifiedName~UnitTests --no-build --no-restore /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build Period End Project'
-  inputs:
-    projects: '**/SFA.DAS.Payments.PeriodEnd.TestEndpoint.csproj'
-  enabled: false
+#******************************************************************************** 
+#********************************************************************************
+##  Build SF Projects : 
+#********************************************************************************   
+#********************************************************************************   
 
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifact: drop'
-  enabled: false
+##  Build SF Projects : EarningEvents
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'EarningEvents'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.EarningEvents.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\EarningEvents'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
+            
+##  Build SF Projects : FundingSource
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'FundingSource'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.FundingSource.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\FundingSource'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish Artifact: drop'
-  inputs:
-    targetPath: '$(build.artifactstagingdirectory)'
-    artifact: drop
+##  Build SF Projects : RequiredPayments
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'RequiredPayments'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.RequiredPayments.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\RequiredPayments'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
 
-#Task group has not been exported, task groups are not supported yet
 
-- task: PublishBuildArtifacts@1
-  displayName: '$(build.artifactstagingdirectory)\PeriodEnd'
-  inputs:
-    PathtoPublish: '$(build.artifactstagingdirectory)\PeriodEnd'
-    ArtifactName: 'periodend-drop'
-  enabled: false
-  continueOnError: true
+##  Build SF Projects : PaymentsDue
+  #  - template: yml/Build.ServiceFabricProjects.yml
+  #    parameters:
+  #      SPProjectName: 'PaymentsDue'
+  #      ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.PaymentsDue.ServiceFabric'
+  #      ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\PaymentsDue'
+  #      BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+  #      ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish Pipeline Artifact - Period End'
-  inputs:
-    targetPath: '$(build.artifactstagingdirectory)\PeriodEnd'
-    artifact: 'periodend-drop'
+##  Build SF Projects : ProviderPayments
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'ProviderPayments'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.ProviderPayments.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\ProviderPayments'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish Pipeline Artifact - Scripts drop'
-  inputs:
-    targetPath: src/Scripts
-    artifact: 'Scripts Drop'
+##  Build SF Projects : Monitoring
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'Monitoring'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.Monitoring.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\Monitoring'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
+
+##  Build SF Projects : Audit
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'Audit'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.Audit.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\Audit'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
+
+##  Build SF Projects : DataLocks
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'DataLocks'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.DataLocks.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\DataLocks'
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
+
+##  Build SF Projects : PeriodEnd 
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'PeriodEnd '
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.PeriodEnd.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\PeriodEnd '
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
+
+##  Build SF Projects : Provider Adjustments 
+    - template: yml/Build.ServiceFabricProjects.yml
+      parameters:
+        SPProjectName: 'Provider Adjustments'
+        ServiceFabricProjectLocation: '$(build.sourcesdirectory)\src\SFA.DAS.Payments.ProviderAdjustments.ServiceFabric'
+        ArtifactLocation: '$(build.artifactstagingdirectory)\$(SF.ArtifactRootFolder)\ProviderAdjustments '
+        BuildConfiguration: '${{ parameters.BuildConfiguration }}'
+        ServiceFabricBuildPlatform: '$(Build.PlatformX64)'
+
+
+    # - task: DotNetCoreCLI@2
+    #   displayName: 'Build Period End Project'
+    #   inputs:
+    #     projects: '**/SFA.DAS.Payments.PeriodEnd.TestEndpoint.csproj'
+    #   enabled: false
+
+    - task: CopyFiles@2
+      displayName: 'Copy Powershell Files to: PSScripts Artifact Staging Directory'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)/src/Scripts'
+        Contents:  |
+          **/**?(*.ps1|*.psm1)
+          !**/Old/*.ps*          
+        TargetFolder: '$(build.artifactstagingdirectory)/PSScripts'
+        CleanTargetFolder: true
+        OverWrite: true
+        flattenFolders: false
+
+#********************************************************************************
+# Count Artifact Files to decide what to Publish
+#********************************************************************************    
+    - task: PowerShell@2
+      displayName: 'Check What to Publish'
+      continueOnError: true  
+      inputs:
+        targetType: 'inline'
+        script: |
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_Web]$(Test-Path '$(build.artifactstagingdirectory)\Web' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_NugetPackages]$(Test-Path '$(build.artifactstagingdirectory)\Nuget' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_Databases]$(Test-Path '$(build.artifactstagingdirectory)\Databases' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_PSScripts]$(Test-Path '$(build.artifactstagingdirectory)\PSScripts' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_ServiceFabric]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric' -PathType Any)";
+
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_EarningEvents]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\EarningEvents' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_FundingSource]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\FundingSource' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_RequiredPayments]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\RequiredPayments' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_PaymentsDue]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\PaymentsDue' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_ProviderPayments]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\ProviderPayments' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_Monitoring]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\Monitoring' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_Audit]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\Audit' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_DataLocks]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\DataLocks' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_PeriodEnd]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\PeriodEnd' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_ProviderAdjustments]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\ProviderAdjustments ' -PathType Any)";
+                  Write-Host "##vso[task.setvariable variable=PublishArtifact_SF_XXX]$(Test-Path '$(build.artifactstagingdirectory)\ServiceFabric\XXX' -PathType Any)";
+
+    - task: PowerShell@2
+      name: DislayWhatToPublish
+      displayName: 'Display what to publish variables'
+      continueOnError: true
+      inputs:
+        targetType: 'inline'
+        script: |
+            (gci env:*).GetEnumerator() | Where-Object {$_.Name -Like "*PublishArtifact_*" } | Sort-Object Name | ForEach {Write-Host "Name: $($_.Name) | Value : $($_.Value)"}
+
+*****************************************************************************
+# Generate Code Coverage Report and Publish
+#********************************************************************************
+# need to add Nuget PAckage 'coverlet.msbuild' to  Test Projects.
+#
+     ## Generate the report using ReportGenerator (https://github.com/danielpalme/ReportGenerator)
+    # First install the tool on the machine, then run it
+    - script: |
+          dotnet tool update -g dotnet-reportgenerator-globaltool --version 4.3.6
+          reportgenerator -reports:$(Build.SourcesDirectory)/**/*Tests/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/CodeCoverage -reporttypes:Cobertura
+      displayName: Create Code coverage report
+      enabled: false
+  
+    # Publish the code coverage result (summary and web site)
+    # The summary allows to view the coverage percentage in the summary tab
+    # The web site allows to view which lines are covered directly in Azure Pipeline
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish code coverage'
+      enabled: false
+      inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: '$(Build.SourcesDirectory)/CodeCoverage/Cobertura.xml'
+        reportDirectory: '$(Build.SourcesDirectory)/CodeCoverage'
+
+#********************************************************************************
+# Publish Artifacts
+#********************************************************************************    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+      enabled: false
+
+  ###########################################################
+  ### Old and need replacing    
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish All Artifact as drop'
+      inputs:
+        targetPath: '$(build.artifactstagingdirectory)'
+        artifact: drop
+
+    - task: PublishPipelineArtifact@1
+      enabled: false
+      displayName: 'Publish Pipeline Artifact - Period End'
+      inputs:
+        targetPath: '$(build.artifactstagingdirectory)\PeriodEnd'
+        artifact: 'periodend-drop'
+
+    - task: PublishPipelineArtifact@1
+      enabled: false
+      displayName: 'Publish Pipeline Artifact - Provider Adjustments'
+      inputs:
+        targetPath: '$(build.artifactstagingdirectory)\ProviderAdjustments'
+        artifact: 'provideradjustments-drop'
+  ###########################################################
+
+
+    # Nuget Package Artifacts
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: NugetPackages'
+      condition: and(succeeded(), eq(variables['PublishArtifact_NugetPackages'], 'True'))
+      inputs:
+        ArtifactName: NugetPackages
+        PathtoPublish: '$(build.artifactstagingdirectory)\Nuget'
+    
+    # Database Artifacts
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: Databases'
+      condition: and(succeeded(), eq(variables['PublishArtifact_Databases'], 'True'))
+      inputs:
+        ArtifactName: Databases
+        PathtoPublish: '$(build.artifactstagingdirectory)\Databases'
+
+    # Powershell Script Artifacts
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: Powershell Script'
+      condition: and(succeeded(), eq(variables['PublishArtifact_Databases'], 'True'))
+      inputs:
+        ArtifactName: Scripts Drop
+        PathtoPublish: '$(build.artifactstagingdirectory)\PSScripts'
+
+ 
+    ## Publish EarningEvents SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: EarningEvents'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_EarningEvents'], 'True'))
+      inputs:
+        ArtifactName: SF-EarningEvents
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\EarningEvents'
+ 
+    ## Publish FundingSource SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: FundingSource'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_FundingSource'], 'True'))
+      inputs:
+        ArtifactName: SF-EarningEvents
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\FundingSource'
+
+ 
+    ## Publish RequiredPayments SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: RequiredPayments'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_RequiredPayments'], 'True'))
+      inputs:
+        ArtifactName: SF-RequiredPayments
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\RequiredPayments'
+ 
+    ## Publish PaymentsDue SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: PaymentsDue'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_PaymentsDue'], 'True'))
+      inputs:
+        ArtifactName: SF-PaymentsDue
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\PaymentsDue'
+ 
+    ## Publish ProviderPayments SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: ProviderPayments'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_ProviderPayments'], 'True'))
+      inputs:
+        ArtifactName: SF-ProviderPayments
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\ProviderPayments'
+
+
+    ## Publish Monitoring SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: Monitoring'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_Monitoring'], 'True'))
+      inputs:
+        ArtifactName: SF-Monitoring
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\Monitoring'
+        
+    ## Publish Audit SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: Audit'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_Audit'], 'True'))
+      inputs:
+        ArtifactName: SF-Audit
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\Audit'
+        
+    ## Publish DataLocks SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: DataLocks'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_DataLocks'], 'True'))
+      inputs:
+        ArtifactName: SF-DataLocks
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\DataLocks'
+        
+    ## Publish PeriodEnd SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: PeriodEnd'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_PeriodEnd'], 'True'))
+      inputs:
+        ArtifactName: SF-PeriodEnd
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\PeriodEnd'
+        
+    ## Publish ProviderAdjustments SF Artifact
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: ProviderAdjustments'
+      condition: and(succeeded(), eq(variables['PublishArtifact_SF_ProviderAdjustments'], 'True'))
+      inputs:
+        ArtifactName: SF-ProviderAdjustments
+        PathtoPublish: '$(build.artifactstagingdirectory)\ServiceFabric\ProviderAdjustments'
+        
