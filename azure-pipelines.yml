@@ -155,7 +155,7 @@ stages:
         platform: '$($(Build.Platform))'
         configuration: '${{ parameters.BuildConfiguration }}'
         msbuildArguments: '/p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
-        clean: true
+        clean: false
         maximumCpuCount: true
         logProjectEvents: true
         createLogFile: true

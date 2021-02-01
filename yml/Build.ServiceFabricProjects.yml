@@ -69,16 +69,23 @@ steps:
 - task: MSBuild@1
   displayName: '${{ parameters.SPProjectName }} : Build and Package - SF Project'
   inputs:
-    solution: '${{ parameters.ServiceFabricProjectLocation }}\**\*.sfproj'
+    solution: '${{ parameters.ServiceFabricProjectLocation }}\*.sfproj'
     msbuildArchitecture: x64
     platform: '${{ parameters.ServiceFabricBuildPlatform }}'
     configuration: '${{ parameters.BuildConfiguration }}'
-    msbuildArguments: '/t:Package /p:PackageLocation="${{ parameters.ArtifactLocation}}\ApplicationPackage" /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber) -p:SkipInvalidConfigurations=true'
-    clean: false
+    msbuildArguments: '/p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /t:Package /p:PackageLocation="${{ parameters.ArtifactLocation }}\ApplicationPackage" /p:version=$(Build.BuildNumber) /p:FileVersion=$(Build.BuildNumber)'
     maximumCpuCount: true
-    restoreNugetPackages: false
     logProjectEvents: true
     createLogFile: true
+
+#********************************************************************************
+# Copy Files into Aftifact Folder before test.
+#********************************************************************************   
+- task: DeleteFiles@1
+  displayName: 'Delete Symbols files from $(build.artifactstagingdirectory)\ServiceFabric\ApplicationPackage'
+  inputs:
+    SourceFolder: '${{ parameters.ArtifactLocation }}'
+    Contents: '**\*.pdb'
 
 - task: CopyFiles@2
   displayName: '${{ parameters.SPProjectName }} : Copy Files - ServiceFabric - ApplicationParameters'
@@ -91,10 +98,16 @@ steps:
 
 - task: CopyFiles@2  #This should not bee needed.
   enabled: false
-  displayName: '${{ parameters.SPProjectName }} : Copy Files - ServiceFabric - PublishProfiles '
+  displayName: '${{ parameters.SPProjectName }} : Copy Files - ServiceFabric - PublishProfiles'
   inputs:
     SourceFolder: '${{ parameters.ServiceFabricProjectLocation }}\'
     Contents: '**\PublishProfiles\Cloud.xml'
-    TargetFolder: '${{ parameters.ArtifactLocation}}\PublishProfiles  '
+    TargetFolder: '${{ parameters.ArtifactLocation}}\PublishProfiles'
     CleanTargetFolder: true
     flattenFolders: true
+
+- task: ServiceFabricUpdateManifests@2
+  displayName: 'Update Service Fabric Manifests (Manifest versions)'
+  inputs:
+    applicationPackagePath: '${{ parameters.ArtifactLocation }}\ApplicationPackage'
+    versionBehavior: Replace
