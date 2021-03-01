@@ -71,8 +71,6 @@ Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "SFA.DAS.Payments.ProviderPa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.ProviderPayments.ProviderPaymentsService", "SFA.DAS.Payments.ProviderPayments.ProviderPaymentsService\SFA.DAS.Payments.ProviderPayments.ProviderPaymentsService.csproj", "{5AFE0AF0-5AA4-42DF-A3CC-826C839B080B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.ProviderPayments.ProviderPaymentsService.Interfaces", "SFA.DAS.Payments.ProviderPayments.ProviderPaymentsService.Interfaces\SFA.DAS.Payments.ProviderPayments.ProviderPaymentsService.Interfaces.csproj", "{AF88EE53-5893-463D-A58C-A06C2AEA2142}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.ProviderPayments.Application", "SFA.DAS.Payments.ProviderPayments.Application\SFA.DAS.Payments.ProviderPayments.Application.csproj", "{0CADEEC6-9458-4055-BD0D-002C52371E6E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.ProviderPayments.Domain", "SFA.DAS.Payments.ProviderPayments.Domain\SFA.DAS.Payments.ProviderPayments.Domain.csproj", "{FF18E687-BC0D-4A9B-9D14-6CFF0799B8C2}"
@@ -347,6 +345,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.ServiceFab
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Duplicates", "Duplicates", "{F741E33F-292D-4E80-BA08-48B7601B4ED6}"
 	ProjectSection(SolutionItems) = preProject
+		FundingSourceLevyTransaction - Predeployment.sql = FundingSourceLevyTransaction - Predeployment.sql
+		FundingSourceLevyTransaction - Rollback.sql = FundingSourceLevyTransaction - Rollback.sql
 		Scripts\Database\Duplicates\Identify Duplicates & Stop New Ones Script.sql = Scripts\Database\Duplicates\Identify Duplicates & Stop New Ones Script.sql
 		Scripts\Database\Duplicates\Rollback - Identify Duplicates & Stop New Ones Script.sql = Scripts\Database\Duplicates\Rollback - Identify Duplicates & Stop New Ones Script.sql
 	EndProjectSection
@@ -368,6 +368,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PeriodEnd", "PeriodEnd", "{93D75B78-B9BC-4C31-8493-E783F84286DB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.EarningEvents.EarningEventsService2021", "SFA.DAS.Payments.EarningEvents.EarningEventsService2021\SFA.DAS.Payments.EarningEvents.EarningEventsService2021.csproj", "{61E3BC96-0B10-4BD7-83AA-D5D4EE96F070}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.Monitoring.Metrics.Data.UnitTests", "SFA.DAS.Payments.Monitoring.Metrics.Data.UnitTests\SFA.DAS.Payments.Monitoring.Metrics.Data.UnitTests.csproj", "{0F8FB2FA-637C-4CD1-AEB9-23481F273772}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SFA.DAS.Payments.Monitoring.Metrics.Function", "SFA.DAS.Payments.Monitoring.Metrics.Function\SFA.DAS.Payments.Monitoring.Metrics.Function.csproj", "{B066C289-668C-4A26-86C4-745B33E328B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SFA.DAS.Payments.Monitoring.Metrics.Function.AcceptanceTests", "SFA.DAS.Payments.Monitoring.Metrics.Function.AcceptanceTests\SFA.DAS.Payments.Monitoring.Metrics.Function.AcceptanceTests.csproj", "{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -599,14 +605,6 @@ Global
 		{5AFE0AF0-5AA4-42DF-A3CC-826C839B080B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5AFE0AF0-5AA4-42DF-A3CC-826C839B080B}.Release|x64.ActiveCfg = Release|Any CPU
 		{5AFE0AF0-5AA4-42DF-A3CC-826C839B080B}.Release|x64.Build.0 = Release|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Debug|x64.Build.0 = Debug|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Release|x64.ActiveCfg = Release|Any CPU
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142}.Release|x64.Build.0 = Release|Any CPU
 		{0CADEEC6-9458-4055-BD0D-002C52371E6E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0CADEEC6-9458-4055-BD0D-002C52371E6E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CADEEC6-9458-4055-BD0D-002C52371E6E}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1487,6 +1485,30 @@ Global
 		{61E3BC96-0B10-4BD7-83AA-D5D4EE96F070}.Release|Any CPU.Build.0 = Release|Any CPU
 		{61E3BC96-0B10-4BD7-83AA-D5D4EE96F070}.Release|x64.ActiveCfg = Release|Any CPU
 		{61E3BC96-0B10-4BD7-83AA-D5D4EE96F070}.Release|x64.Build.0 = Release|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Debug|x64.Build.0 = Debug|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Release|x64.ActiveCfg = Release|Any CPU
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772}.Release|x64.Build.0 = Release|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Debug|x64.Build.0 = Debug|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Release|x64.ActiveCfg = Release|Any CPU
+		{B066C289-668C-4A26-86C4-745B33E328B6}.Release|x64.Build.0 = Release|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Debug|x64.Build.0 = Debug|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Release|x64.ActiveCfg = Release|Any CPU
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1517,7 +1539,6 @@ Global
 		{906D925F-EDA0-44A6-B276-E32E87230F69} = {205CA299-AED1-4F0B-971A-15CCD398A597}
 		{2555473F-D8BA-4046-85C8-9A97F58CA87E} = {CE13B0C9-B716-4E9A-9563-95DAD13BD5DF}
 		{5AFE0AF0-5AA4-42DF-A3CC-826C839B080B} = {CE13B0C9-B716-4E9A-9563-95DAD13BD5DF}
-		{AF88EE53-5893-463D-A58C-A06C2AEA2142} = {CE13B0C9-B716-4E9A-9563-95DAD13BD5DF}
 		{0CADEEC6-9458-4055-BD0D-002C52371E6E} = {CE13B0C9-B716-4E9A-9563-95DAD13BD5DF}
 		{FF18E687-BC0D-4A9B-9D14-6CFF0799B8C2} = {CE13B0C9-B716-4E9A-9563-95DAD13BD5DF}
 		{F41ED226-C11E-44C3-825A-C40143F0FEF9} = {CE13B0C9-B716-4E9A-9563-95DAD13BD5DF}
@@ -1638,6 +1659,9 @@ Global
 		{06BEFF26-CDC1-4556-8464-4581FDA51340} = {93D75B78-B9BC-4C31-8493-E783F84286DB}
 		{93D75B78-B9BC-4C31-8493-E783F84286DB} = {F3F3B467-DCBE-4D11-9BD1-08D628E2C1BE}
 		{61E3BC96-0B10-4BD7-83AA-D5D4EE96F070} = {213651BD-07BA-4A57-B1BE-CF4A649BA069}
+		{0F8FB2FA-637C-4CD1-AEB9-23481F273772} = {DECD8689-7388-475F-B44D-51016E4F2AB3}
+		{B066C289-668C-4A26-86C4-745B33E328B6} = {F3F3B467-DCBE-4D11-9BD1-08D628E2C1BE}
+		{820B9CE6-ED12-4AD6-9B13-0E5CE0D656DA} = {DECD8689-7388-475F-B44D-51016E4F2AB3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4E9E6D1E-3C3C-41C9-AED4-9B6DC9118F1F}

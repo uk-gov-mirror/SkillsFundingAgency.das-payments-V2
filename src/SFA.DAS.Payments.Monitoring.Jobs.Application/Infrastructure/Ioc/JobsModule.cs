@@ -7,6 +7,7 @@ using SFA.DAS.Payments.Application.Messaging;
 using SFA.DAS.Payments.Application.Repositories;
 using SFA.DAS.Payments.Core.Configuration;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Configuration;
+using SFA.DAS.Payments.Monitoring.Jobs.Application.JobMessageProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing.Earnings;
 using SFA.DAS.Payments.Monitoring.Jobs.Application.JobProcessing.PeriodEnd;
@@ -33,7 +34,8 @@ namespace SFA.DAS.Payments.Monitoring.Jobs.Application.Infrastructure.Ioc
                 var configHelper = c.Resolve<IConfigurationHelper>();
                 return new JobServiceConfiguration(
                     TimeSpan.Parse(configHelper.GetSettingOrDefault("JobStatusCheck_Interval", "00:00:10")),
-                    TimeSpan.Parse(configHelper.GetSettingOrDefault("TimeToWaitForJobToComplete", "00:20:00"))
+                    TimeSpan.Parse(configHelper.GetSettingOrDefault("TimeToWaitForJobToComplete", "00:20:00")),
+                TimeSpan.Parse(configHelper.GetSettingOrDefault("TimeToWaitForPeriodEndRunJobToComplete", "00:20:00"))
                     );
             })
                 .As<IJobServiceConfiguration>()

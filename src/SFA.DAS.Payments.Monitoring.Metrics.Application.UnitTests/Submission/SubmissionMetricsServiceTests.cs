@@ -49,7 +49,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.UnitTests.Submission
                 {
                     SubmissionMetrics = new ContractTypeAmountsVerbose(),
                     DasEarnings = new ContractTypeAmountsVerbose(),
-                    DataLockMetrics = new List<DataLockCountsModel>(),
+                    DataLockMetrics = new DataLockCountsModel(),
                     DcEarnings = new ContractTypeAmounts(),
                     EarningsMetrics = new List<EarningsModel>(),
                     HeldBackCompletionPayments = new ContractTypeAmounts(),
@@ -219,8 +219,6 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.UnitTests.Submission
                 { "DataLockedEarningsTotal", 4000 },
                 
                 { "DataLockAmountAlreadyPaid", 1000 },
-                
-                { "NonLevyRequiredPayments", 0 },
                 
                 { "HeldBackCompletionPayments", 3000 },
                 { "HeldBackCompletionPaymentsContractType1", 2000 },

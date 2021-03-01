@@ -44,31 +44,44 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 var stopwatch = Stopwatch.StartNew();
                 var submissionSummary = submissionSummaryFactory.Create(ukprn, jobId, academicYear, collectionPeriod);
                 var dcEarningsTask = dcMetricsDataContextFactory.CreateContext(academicYear).GetEarnings(ukprn, academicYear, collectionPeriod, cancellationToken);
+                
                 var dasEarningsTask = submissionRepository.GetDasEarnings(ukprn, jobId, cancellationToken);
                 var dataLocksTask = submissionRepository.GetDataLockedEarnings(ukprn, jobId, cancellationToken);
                 var dataLocksTotalTask = submissionRepository.GetDataLockedEarningsTotal(ukprn, jobId, cancellationToken);
-                var dataLocksAlreadyPaid =
-                    submissionRepository.GetAlreadyPaidDataLockedEarnings(ukprn, jobId, cancellationToken);
+                var dataLocksAlreadyPaid = submissionRepository.GetAlreadyPaidDataLockedEarnings(ukprn, jobId, cancellationToken);
                 var requiredPaymentsTask = submissionRepository.GetRequiredPayments(ukprn, jobId, cancellationToken);
                 var heldBackCompletionAmountsTask = submissionRepository.GetHeldBackCompletionPaymentsTotal(ukprn, jobId, cancellationToken);
                 var yearToDateAmountsTask = submissionRepository.GetYearToDatePaymentsTotal(ukprn, academicYear, collectionPeriod, cancellationToken);
+                
                 var dataTask = Task.WhenAll(dcEarningsTask, dasEarningsTask, dataLocksTask, dataLocksTotalTask, dataLocksAlreadyPaid, requiredPaymentsTask, heldBackCompletionAmountsTask, yearToDateAmountsTask);
+                
                 var waitTask = Task.Delay(TimeSpan.FromSeconds(270), cancellationToken);
+
                 Task.WaitAny(dataTask, waitTask);
+
                 cancellationToken.ThrowIfCancellationRequested();
+
                 if (!dataTask.IsCompleted)
                     throw new InvalidOperationException($"Took too long to get data for the submission metrics. Ukprn: {ukprn}, job: {jobId}, Collection period: {collectionPeriod}");
+                
                 var dataDuration = stopwatch.ElapsedMilliseconds;
+
                 logger.LogDebug($"finished getting data from databases for job: {jobId}, ukprn: {ukprn}. Took: {dataDuration}ms.");
+
                 submissionSummary.AddEarnings(dcEarningsTask.Result, dasEarningsTask.Result);
                 submissionSummary.AddDataLockTypeCounts(dataLocksTotalTask.Result, dataLocksTask.Result, dataLocksAlreadyPaid.Result);
                 submissionSummary.AddRequiredPayments(requiredPaymentsTask.Result);
                 submissionSummary.AddHeldBackCompletionPayments(heldBackCompletionAmountsTask.Result);
                 submissionSummary.AddYearToDatePaymentTotals(yearToDateAmountsTask.Result);
+
                 var metrics = submissionSummary.GetMetrics();
+
                 await submissionRepository.SaveSubmissionMetrics(metrics, cancellationToken);
+
                 stopwatch.Stop();
+
                 SendMetricsTelemetry(metrics, stopwatch.ElapsedMilliseconds);
+
                 logger.LogInfo($"Finished building metrics for submission job: {jobId}, provider: {ukprn}, Academic year: {academicYear}, Collection period: {collectionPeriod}. Took: {stopwatch.ElapsedMilliseconds}ms");
             }
             catch (Exception e)
@@ -126,13 +139,11 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 { "DcEarningsContractType1Total" ,       (double) dcEarnings.ContractType1 },
                 { "DcEarningsContractType2Total" ,       (double) dcEarnings.ContractType2 },
                 
-                { "DataLockedEarningsAmount" ,                (double) metrics.DataLockedEarnings},
+                { "DataLockedEarningsAmount" ,                (double) metrics.AdjustedDataLockedEarnings },
                 
-                { "DataLockedEarningsTotal" ,                 (double) metrics.TotalDataLockedEarnings},
+                { "DataLockedEarningsTotal" ,                 (double) metrics.TotalDataLockedEarnings },
                 
                 { "DataLockAmountAlreadyPaid" ,               (double) metrics.AlreadyPaidDataLockedEarnings },
-                
-                { "NonLevyRequiredPayments" ,                 (double) metrics.NonLevyRequiredPayments },
                 
                 { "HeldBackCompletionPayments" ,              (double) metrics.HeldBackCompletionPayments.Total },
                 { "HeldBackCompletionPaymentsContractType1" , (double) metrics.HeldBackCompletionPayments.ContractType1 },
@@ -176,18 +187,18 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Application.Submission
                 { "DcEarningsTransactionType15" , (double) dc_earningsMetrics.Sum(x=>x.Amounts.TransactionType15) },
                 { "DcEarningsTransactionType16" , (double) dc_earningsMetrics.Sum(x=>x.Amounts.TransactionType16) },
                 
-                { "DataLockedCountDLock1" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock1) },
-                { "DataLockedCountDLock2" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock2) },
-                { "DataLockedCountDLock3" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock3) },
-                { "DataLockedCountDLock4" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock4) },
-                { "DataLockedCountDLock5" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock5) },
-                { "DataLockedCountDLock6" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock6) },
-                { "DataLockedCountDLock7" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock7) },
-                { "DataLockedCountDLock8" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock8) },
-                { "DataLockedCountDLock9" ,  dataLockMetrics.Sum(x=>x.Amounts.DataLock9) },
-                { "DataLockedCountDLock10" , dataLockMetrics.Sum(x=>x.Amounts.DataLock10) },
-                { "DataLockedCountDLock11" , dataLockMetrics.Sum(x=>x.Amounts.DataLock11) },
-                { "DataLockedCountDLock12" , dataLockMetrics.Sum(x=>x.Amounts.DataLock12) },
+                { "DataLockedCountDLock1" ,  dataLockMetrics.Amounts.DataLock1 },
+                { "DataLockedCountDLock2" ,  dataLockMetrics.Amounts.DataLock2 },
+                { "DataLockedCountDLock3" ,  dataLockMetrics.Amounts.DataLock3 },
+                { "DataLockedCountDLock4" ,  dataLockMetrics.Amounts.DataLock4 },
+                { "DataLockedCountDLock5" ,  dataLockMetrics.Amounts.DataLock5 },
+                { "DataLockedCountDLock6" ,  dataLockMetrics.Amounts.DataLock6 },
+                { "DataLockedCountDLock7" ,  dataLockMetrics.Amounts.DataLock7 },
+                { "DataLockedCountDLock8" ,  dataLockMetrics.Amounts.DataLock8 },
+                { "DataLockedCountDLock9" ,  dataLockMetrics.Amounts.DataLock9 },
+                { "DataLockedCountDLock10" , dataLockMetrics.Amounts.DataLock10 },
+                { "DataLockedCountDLock11" , dataLockMetrics.Amounts.DataLock11 },
+                { "DataLockedCountDLock12" , dataLockMetrics.Amounts.DataLock12 },
                 
                 { "RequiredPaymentsTotal" ,     (double) metrics.RequiredPayments.Total },
                 { "RequiredPaymentsAct1Total" , (double) metrics.RequiredPayments.ContractType1 },

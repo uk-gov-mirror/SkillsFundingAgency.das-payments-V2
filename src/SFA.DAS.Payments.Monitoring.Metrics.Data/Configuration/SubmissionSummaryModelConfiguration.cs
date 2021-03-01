@@ -58,8 +58,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Data.Configuration
                 amounts.Property(x => x.ContractType2).HasColumnName(@"HeldBackCompletionPaymentsContractType2");
                 amounts.Ignore(x => x.Total);
             });
-            builder.Property(x => x.NonLevyRequiredPayments).HasColumnName(@"RequiredPaymentsNonLevy");
-            builder.Property(x => x.DataLockedEarnings).HasColumnName(@"DataLockedEarnings");
+            builder.Property(x => x.AdjustedDataLockedEarnings).HasColumnName(@"AdjustedDataLockedEarnings");
             builder.Property(x => x.AlreadyPaidDataLockedEarnings).HasColumnName(@"AlreadyPaidDataLockedEarnings");
             builder.Property(x => x.TotalDataLockedEarnings).HasColumnName(@"TotalDataLockedEarnings");
             builder.OwnsOne(x => x.YearToDatePayments, amounts =>
@@ -70,7 +69,7 @@ namespace SFA.DAS.Payments.Monitoring.Metrics.Data.Configuration
             });
 
             builder.HasMany(x => x.EarningsMetrics).WithOne(e => e.SubmissionSummary).HasForeignKey(e => e.SubmissionSummaryId);
-            builder.HasMany(x => x.DataLockMetrics).WithOne(d => d.SubmissionSummary).HasForeignKey(d => d.SubmissionSummaryId);
+            builder.HasOne(x => x.DataLockMetrics).WithOne(d => d.SubmissionSummary).HasForeignKey<DataLockCountsModel>(d => d.SubmissionSummaryId);
             builder.HasMany(x => x.RequiredPaymentsMetrics).WithOne(r => r.SubmissionSummary).HasForeignKey(r => r.SubmissionSummaryId);
         }
     }
