@@ -545,10 +545,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>PV2-851 - Non Levy learner earns 16-18 incentives payment, and finishes on times.feature</DependentUpon>
     </Compile>
-    <Compile Include="Tests\Additional Payments Incentives\PV2-852 - Non Levy learner, price is less than funding band maximum, earns 16-18 incentive payment, and finishes on time.feature.cs">
+    <Compile Include="Tests\Additional Payments Incentives\PV2-852_NonLevy_price_below_band_16-18_incentive_finish_on_time.feature.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>PV2-852 - Non Levy learner, price is less than funding band maximum, earns 16-18 incentive payment, and finishes on time.feature</DependentUpon>
+      <DependentUpon>PV2-852_NonLevy_price_below_band_16-18_incentive_finish_on_time.feature</DependentUpon>
     </Compile>
     <Compile Include="Tests\Approvals Interface\PV2-688 - New Apprenticeship Approved.feature.cs">
       <AutoGen>True</AutoGen>
@@ -1021,15 +1021,15 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>PV2-895 - Non Levy learner starts Nov18 takes a planned break and resumes Apr19, remains at 10 percent contribution.feature</DependentUpon>
     </Compile>
-    <Compile Include="Tests\Five Percent Funding\PV2-896 - Non Levy learner starts Aug18 changes Employer Apr19, stays on same course and price, remains at 10 percent contribution.feature.cs">
+    <Compile Include="Tests\Five Percent Funding\PV2-896_NonLevy_Aug18_change_Employer_Apr19_same_course_10pct.feature.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>PV2-896 - Non Levy learner starts Aug18 changes Employer Apr19, stays on same course and price, remains at 10 percent contribution.feature</DependentUpon>
+      <DependentUpon>PV2-896_NonLevy_Aug18_change_Employer_Apr19_same_course_10pct.feature</DependentUpon>
     </Compile>
-    <Compile Include="Tests\Five Percent Funding\PV2-897 - Non Levy learner starts Aug18 changes Provider Apr19, stays on same course and price, remains at 10 percent contribution.feature.cs">
+    <Compile Include="Tests\Five Percent Funding\PV2-897_NonLevy_Aug18_change_Provider_Apr19_same_course_10pct.feature.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>PV2-897 - Non Levy learner starts Aug18 changes Provider Apr19, stays on same course and price, remains at 10 percent contribution.feature</DependentUpon>
+      <DependentUpon>PV2-897_NonLevy_Aug18_change_Provider_Apr19_same_course_10pct.feature</DependentUpon>
     </Compile>
     <Compile Include="Tests\Five Percent Funding\PV2-905 - Levy learner starts Apr18 completes learning,starts new course in Apr19, on co-funding of 5pc.feature.cs">
       <AutoGen>True</AutoGen>
@@ -1949,9 +1949,9 @@
       <Generator>SpecFlowSingleFileGenerator</Generator>
       <LastGenOutput>PV2-851 - Non Levy learner earns 16-18 incentives payment, and finishes on times.feature.cs</LastGenOutput>
     </None>
-    <None Include="Tests\Additional Payments Incentives\PV2-852 - Non Levy learner, price is less than funding band maximum, earns 16-18 incentive payment, and finishes on time.feature">
+    <None Include="Tests\Additional Payments Incentives\PV2-852_NonLevy_price_below_band_16-18_incentive_finish_on_time.feature">
       <Generator>SpecFlowSingleFileGenerator</Generator>
-      <LastGenOutput>PV2-852 - Non Levy learner, price is less than funding band maximum, earns 16-18 incentive payment, and finishes on time.feature.cs</LastGenOutput>
+      <LastGenOutput>PV2-852_NonLevy_price_below_band_16-18_incentive_finish_on_time.feature.cs</LastGenOutput>
     </None>
     <None Include="Tests\Approvals Interface\PV2-696 - Employer Change in Payment Order for Multiple learners with an Employer.feature">
       <Generator>SpecFlowSingleFileGenerator</Generator>
@@ -2301,13 +2301,13 @@
       <Generator>SpecFlowSingleFileGenerator</Generator>
       <LastGenOutput>PV2-895 - Non Levy learner starts Nov18 takes a planned break and resumes Apr19, remains at 10 percent contribution.feature.cs</LastGenOutput>
     </None>
-    <None Include="Tests\Five Percent Funding\PV2-896 - Non Levy learner starts Aug18 changes Employer Apr19, stays on same course and price, remains at 10 percent contribution.feature">
+    <None Include="Tests\Five Percent Funding\PV2-896_NonLevy_Aug18_change_Employer_Apr19_same_course_10pct.feature">
       <Generator>SpecFlowSingleFileGenerator</Generator>
-      <LastGenOutput>PV2-896 - Non Levy learner starts Aug18 changes Employer Apr19, stays on same course and price, remains at 10 percent contribution.feature.cs</LastGenOutput>
+      <LastGenOutput>PV2-896_NonLevy_Aug18_change_Employer_Apr19_same_course_10pct.feature.cs</LastGenOutput>
     </None>
-    <None Include="Tests\Five Percent Funding\PV2-897 - Non Levy learner starts Aug18 changes Provider Apr19, stays on same course and price, remains at 10 percent contribution.feature">
+    <None Include="Tests\Five Percent Funding\PV2-897_NonLevy_Aug18_change_Provider_Apr19_same_course_10pct.feature">
       <Generator>SpecFlowSingleFileGenerator</Generator>
-      <LastGenOutput>PV2-897 - Non Levy learner starts Aug18 changes Provider Apr19, stays on same course and price, remains at 10 percent contribution.feature.cs</LastGenOutput>
+      <LastGenOutput>PV2-897_NonLevy_Aug18_change_Provider_Apr19_same_course_10pct.feature.cs</LastGenOutput>
     </None>
     <None Include="Tests\Five Percent Funding\PV2-905 - Levy learner starts Apr18 completes learning,starts new course in Apr19, on co-funding of 5pc.feature">
       <Generator>SpecFlowSingleFileGenerator</Generator>
