@@ -63,12 +63,12 @@ Then the following learner earnings should be generated
 
 And at month end only the following payments will be calculated
     | Collection Period         | Delivery Period           | On-Programme | Completion | Balancing |
-    | R02/Current Academic Year | Nov/Current Academic Year | -750         | 0          | 0         |
+    | R06/Current Academic Year | Aug/Current Academic Year | -750         | 0          | 0         |
 
 And only the following provider payments will be recorded
     | Collection Period         | Delivery Period           | Levy Payments | Transaction Type |
-    | R02/Current Academic Year | Nov/Current Academic Year | -750          | Learning         |
+    | R06/Current Academic Year | Aug/Current Academic Year | -750          | Learning         |
 
 And only the following provider payments will be generated
     | Collection Period         | Delivery Period           | Levy Payments | Transaction Type |
-    | R02/Current Academic Year | Nov/Current Academic Year | -750          | Learning         |
+    | R06/Current Academic Year | Aug/Current Academic Year | -750          | Learning         |
